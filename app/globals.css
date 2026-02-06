@@ -485,7 +485,7 @@
     --popover: var(--background);
     --popover-foreground: var(--foreground);
     --primary: var(--color-primary-500);
-    --primary-foreground: var(--color-primary-600);
+    --primary-foreground: var(--color-white);
     --secondary: var(--muted);
     --secondary-foreground: var(--foreground);
     --muted: var(--color-gray-50);

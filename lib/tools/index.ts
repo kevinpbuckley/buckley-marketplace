@@ -26,6 +26,8 @@ import { definition as listHostsDefinition, aiTool as listHostsAiTool, execute a
 import { definition as listTrackedSitesDefinition, aiTool as listTrackedSitesAiTool, execute as listTrackedSitesExecute } from './listTrackedSites';
 import { definition as getPersonalizationVariantsDefinition, aiTool as getPersonalizationVariantsAiTool, execute as getPersonalizationVariantsExecute } from './getPersonalizationVariants';
 import { definition as listConditionTemplatesDefinition, aiTool as listConditionTemplatesAiTool, execute as listConditionTemplatesExecute } from './listConditionTemplates';
+import { definition as getConditionTemplateByIdDefinition, aiTool as getConditionTemplateByIdAiTool, execute as getConditionTemplateByIdExecute } from './getConditionTemplateById';
+import { definition as createPersonalizationVersionDefinition, aiTool as createPersonalizationVersionAiTool, execute as createPersonalizationVersionExecute } from './createPersonalizationVersion';
 import { definition as listCollectionsDefinition, aiTool as listCollectionsAiTool, execute as listCollectionsExecute } from './listCollections';
 import { definition as listSiteTemplatesDefinition, aiTool as listSiteTemplatesAiTool, execute as listSiteTemplatesExecute } from './listSiteTemplates';
 import { definition as searchAssetsDefinition, aiTool as searchAssetsAiTool, execute as searchAssetsExecute } from './searchAssets';
@@ -39,6 +41,8 @@ import { definition as listPageAncestorsDefinition, aiTool as listPageAncestorsA
 import { definition as listPageVariantsDefinition, aiTool as listPageVariantsAiTool, execute as listPageVariantsExecute } from './listPageVariants';
 import { definition as getSiteFromItemDefinition, aiTool as getSiteFromItemAiTool, execute as getSiteFromItemExecute } from './getSiteFromItem';
 import { definition as getJobDetailsDefinition, aiTool as getJobDetailsAiTool, execute as getJobDetailsExecute } from './getJobDetails';
+import { definition as listJobOperationsDefinition, aiTool as listJobOperationsAiTool, execute as listJobOperationsExecute } from './listJobOperations';
+import { definition as revertJobDefinition, aiTool as revertJobAiTool, execute as revertJobExecute } from './revertJob';
 import { definition as getCollectionDetailsDefinition, aiTool as getCollectionDetailsAiTool, execute as getCollectionDetailsExecute } from './getCollectionDetails';
 import { definition as getHostDetailsDefinition, aiTool as getHostDetailsAiTool, execute as getHostDetailsExecute } from './getHostDetails';
 import { definition as analyzeChildItemCountDefinition, aiTool as analyzeChildItemCountAiTool, execute as analyzeChildItemCountExecute } from './analyzeChildItemCount';
@@ -63,6 +67,8 @@ import { definition as createComponentDatasourceDefinition, aiTool as createComp
 
 // Import context tools
 import { definition as getCurrentPageContextDefinition, aiTool as getCurrentPageContextAiTool, execute as getCurrentPageContextExecute } from './getCurrentPageContext';
+import { definition as getCurrentSiteContextDefinition, aiTool as getCurrentSiteContextAiTool, execute as getCurrentSiteContextExecute } from './getCurrentSiteContext';
+import { definition as refreshPageViewDefinition, aiTool as refreshPageViewAiTool, execute as refreshPageViewExecute } from './refreshPageView';
 
 /**
  * Registry of all available tools
@@ -71,6 +77,8 @@ import { definition as getCurrentPageContextDefinition, aiTool as getCurrentPage
 const toolRegistry: Map<string, ToolModule> = new Map([
   // Context tools (Pages editor)
   ['getCurrentPageContext', { definition: getCurrentPageContextDefinition, aiTool: getCurrentPageContextAiTool, execute: getCurrentPageContextExecute }],
+  ['getCurrentSiteContext', { definition: getCurrentSiteContextDefinition, aiTool: getCurrentSiteContextAiTool, execute: getCurrentSiteContextExecute }],
+  ['refreshPageView', { definition: refreshPageViewDefinition, aiTool: refreshPageViewAiTool, execute: refreshPageViewExecute }],
   
   // Core tools
   ['listLanguages', { definition: listLanguagesDefinition, aiTool: listLanguagesAiTool, execute: listLanguagesExecute }],
@@ -109,6 +117,8 @@ const toolRegistry: Map<string, ToolModule> = new Map([
   ['listTrackedSites', { definition: listTrackedSitesDefinition, aiTool: listTrackedSitesAiTool, execute: listTrackedSitesExecute }],
   ['getPersonalizationVariants', { definition: getPersonalizationVariantsDefinition, aiTool: getPersonalizationVariantsAiTool, execute: getPersonalizationVariantsExecute }],
   ['listConditionTemplates', { definition: listConditionTemplatesDefinition, aiTool: listConditionTemplatesAiTool, execute: listConditionTemplatesExecute }],
+  ['getConditionTemplateById', { definition: getConditionTemplateByIdDefinition, aiTool: getConditionTemplateByIdAiTool, execute: getConditionTemplateByIdExecute }],
+  ['createPersonalizationVersion', { definition: createPersonalizationVersionDefinition, aiTool: createPersonalizationVersionAiTool, execute: createPersonalizationVersionExecute }],
   
   // Site organization tools
   ['listCollections', { definition: listCollectionsDefinition, aiTool: listCollectionsAiTool, execute: listCollectionsExecute }],
@@ -122,6 +132,8 @@ const toolRegistry: Map<string, ToolModule> = new Map([
   ['listJobs', { definition: listJobsDefinition, aiTool: listJobsAiTool, execute: listJobsExecute }],
   ['listSupportedLanguages', { definition: listSupportedLanguagesDefinition, aiTool: listSupportedLanguagesAiTool, execute: listSupportedLanguagesExecute }],
   ['getJobDetails', { definition: getJobDetailsDefinition, aiTool: getJobDetailsAiTool, execute: getJobDetailsExecute }],
+  ['listJobOperations', { definition: listJobOperationsDefinition, aiTool: listJobOperationsAiTool, execute: listJobOperationsExecute }],
+  ['revertJob', { definition: revertJobDefinition, aiTool: revertJobAiTool, execute: revertJobExecute }],
   
   // Page analysis & preview tools
   ['getPagePreviewUrl', { definition: getPagePreviewUrlDefinition, aiTool: getPagePreviewUrlAiTool, execute: getPagePreviewUrlExecute }],

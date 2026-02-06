@@ -1,9 +1,11 @@
 {
-  "name": "agentic-api-agent",
-  "description": "Agentic API Agent",
+  "name": "sitecore-360-agent",
+  "description": "Sitecore 360 Agent",
   "systemPromptFile": "./system-prompt.md",
   "tools": [
     "getCurrentPageContext",
+    "getCurrentSiteContext",
+    "refreshPageView",
     "listLanguages",
     "listSites",
     "getSiteDetails",
@@ -30,6 +32,7 @@
     "listTrackedSites",
     "getPersonalizationVariants",
     "listConditionTemplates",
+    "getConditionTemplateById",
     "listCollections",
     "listSiteTemplates",
     "searchAssets",
@@ -42,6 +45,8 @@
     "listPageVariants",
     "getSiteFromItem",
     "getJobDetails",
+    "listJobOperations",
+    "revertJob",
     "getCollectionDetails",
     "getHostDetails",
     "analyzeChildItemCount",
@@ -59,10 +64,14 @@
     "addLanguageToPage",
     "setComponentDatasource",
     "createComponentDatasource",
+    "createPersonalizationVersion",
     "uploadAsset",
     "updateAsset"
   ],
   "samplePrompts": [
-    { "category": "General", "prompt": "Review the html output for the item and update the meta data fields on the content item.", "icon": "🌐" }
+    { "category": "Content Analysis", "prompt": "Review the html output for the item and update the meta data fields on the content item.", "icon": "🌐" },
+    { "category": "Content Analysis", "prompt": "Show me all pages in the site and analyze their workflow status", "icon": "📊" },
+    { "category": "Content Analysis", "prompt": "Find all pages that haven't been localized to Spanish", "icon": "🌍" },
+    { "category": "Content Analysis", "prompt": "List all components used on the home page", "icon": "🧩" }
   ]
 }

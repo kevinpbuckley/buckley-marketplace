@@ -474,9 +474,9 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">Welcome to the Review Assistant</h3>
+              <h3 className="text-lg font-medium mb-2">Hello, I'm the Sitecore 360 Assistant.</h3>
               <p className="text-muted-foreground">
-                I can help you review your XM Cloud solution against best practices.
+                I have a variety of skills and tools that will allow me to help you.
               </p>
               <p className="text-muted-foreground text-sm mt-1">
                 Choose a suggestion below or type your own question.
@@ -498,7 +498,7 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
                 'max-w-[80%] rounded-lg px-4 py-2',
                 message.role === 'user'
                   ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
+                  : 'bg-muted text-foreground'
               )}
             >
               {/* Message content */}

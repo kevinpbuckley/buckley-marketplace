@@ -69,11 +69,21 @@ export const execute: ToolExecutor = async (input, context) => {
       },
     });
 
+    // Check if response indicates an error
+    if (!response.data) {
+      const error = (response as any).error;
+      return {
+        success: false,
+        error: error?.message || 'Update failed - no data returned from API',
+      };
+    }
+
     return {
       success: true,
       output: response.data,
     };
   } catch (err) {
+    console.error('[updateContent] Error:', err);
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to update content',

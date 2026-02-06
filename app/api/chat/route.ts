@@ -7,7 +7,7 @@ import { trackTokenUsage } from '@/lib/token-tracker';
 // Uses AZURE_API_KEY and AZURE_RESOURCE_NAME env vars automatically
 const azure = createAzure({
   useDeploymentBasedUrls: true,
-  apiVersion: '2024-08-01-preview',
+  apiVersion: process.env.AZURE_API_VERSION || '2024-12-01-preview',
 });
 
 // Load the default agent and its tools
