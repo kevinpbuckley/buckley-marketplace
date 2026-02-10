@@ -70,6 +70,15 @@ import { definition as getCurrentPageContextDefinition, aiTool as getCurrentPage
 import { definition as getCurrentSiteContextDefinition, aiTool as getCurrentSiteContextAiTool, execute as getCurrentSiteContextExecute } from './getCurrentSiteContext';
 import { definition as refreshPageViewDefinition, aiTool as refreshPageViewAiTool, execute as refreshPageViewExecute } from './refreshPageView';
 
+// Import Pages API tools
+import { definition as getPageWorkflowDefinition, aiTool as getPageWorkflowAiTool, execute as getPageWorkflowExecute } from './getPageWorkflow';
+import { definition as getPageVersionsDefinition, aiTool as getPageVersionsAiTool, execute as getPageVersionsExecute } from './getPageVersions';
+import { definition as createPageVersionDefinition, aiTool as createPageVersionAiTool, execute as createPageVersionExecute } from './createPageVersion';
+import { definition as checkPageLiveDefinition, aiTool as checkPageLiveAiTool, execute as checkPageLiveExecute } from './checkPageLive';
+import { definition as executeWorkflowCommandDefinition, aiTool as executeWorkflowCommandAiTool, execute as executeWorkflowCommandExecute } from './executeWorkflowCommand';
+import { definition as searchPagesAdvancedDefinition, aiTool as searchPagesAdvancedAiTool, execute as searchPagesAdvancedExecute } from './searchPagesAdvanced';
+import { definition as deletePageItemDefinition, aiTool as deletePageItemAiTool, execute as deletePageItemExecute } from './deletePageItem';
+
 /**
  * Registry of all available tools
  * Each tool is imported from its own file for modularity
@@ -172,6 +181,19 @@ const toolRegistry: Map<string, ToolModule> = new Map([
   // Write tools - Assets
   ['uploadAsset', { definition: uploadAssetDefinition, aiTool: uploadAssetAiTool, execute: uploadAssetExecute }],
   ['updateAsset', { definition: updateAssetDefinition, aiTool: updateAssetAiTool, execute: updateAssetExecute }],
+
+  // Pages API tools - Workflow & Publishing
+  ['getPageWorkflow', { definition: getPageWorkflowDefinition, aiTool: getPageWorkflowAiTool, execute: getPageWorkflowExecute }],
+  ['executeWorkflowCommand', { definition: executeWorkflowCommandDefinition, aiTool: executeWorkflowCommandAiTool, execute: executeWorkflowCommandExecute }],
+  ['checkPageLive', { definition: checkPageLiveDefinition, aiTool: checkPageLiveAiTool, execute: checkPageLiveExecute }],
+
+  // Pages API tools - Versions
+  ['getPageVersions', { definition: getPageVersionsDefinition, aiTool: getPageVersionsAiTool, execute: getPageVersionsExecute }],
+  ['createPageVersion', { definition: createPageVersionDefinition, aiTool: createPageVersionAiTool, execute: createPageVersionExecute }],
+
+  // Pages API tools - Advanced Operations
+  ['searchPagesAdvanced', { definition: searchPagesAdvancedDefinition, aiTool: searchPagesAdvancedAiTool, execute: searchPagesAdvancedExecute }],
+  ['deletePageItem', { definition: deletePageItemDefinition, aiTool: deletePageItemAiTool, execute: deletePageItemExecute }],
 ]);
 
 /**

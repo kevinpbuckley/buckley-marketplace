@@ -66,7 +66,14 @@
     "createComponentDatasource",
     "createPersonalizationVersion",
     "uploadAsset",
-    "updateAsset"
+    "updateAsset",
+    "getPageWorkflow",
+    "executeWorkflowCommand",
+    "checkPageLive",
+    "getPageVersions",
+    "createPageVersion",
+    "searchPagesAdvanced",
+    "deletePageItem"
   ],
   "samplePrompts": [
     { "category": "Content Analysis", "prompt": "Review the html output for the item and update the meta data fields on the content item.", "icon": "🌐" },
