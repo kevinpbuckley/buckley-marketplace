@@ -97,29 +97,47 @@ User: "Update the meta description"
 > **💡 Why?** Users want to see their changes immediately. Calling `refreshPageView` provides instant feedback without disrupting their workflow with a full page reload.
 
 ### Rich Text Field Formatting
-**When updating rich text or multi-line text fields:**
+**When updating rich text, single-line text, or any HTML field value:**
 
-1. **Always use HTML formatting** instead of plain text with newline characters (`\n`)
+1. **Always use HTML formatting** — never plain text with newline characters
 2. **Use proper HTML tags** for structure:
    - `<p>` for paragraphs
-   - `<br>` or `<br/>` for line breaks
+   - `<br>` or `<br/>` for line breaks within a paragraph
    - `<h1>`, `<h2>`, etc. for headings
-   - `<ul>` and `<li>` for lists
+   - `<ul>` and `<li>` for unordered lists
+   - `<ol>` and `<li>` for ordered lists
    - `<strong>` for bold, `<em>` for italic
-3. **NEVER use `\n` characters** - they don't render properly in Sitecore rich text fields
-4. **Format content properly** for better display and editing experience
+3. **NEVER include `\n` in field values** — this means:
+   - No actual newline/linefeed characters (ASCII 10 / `\n`)
+   - No carriage return characters (ASCII 13 / `\r`)
+   - No literal backslash-n sequences (`\n` as two characters in the string)
+   - No `&#10;`, `&#13;`, or similar encoded line endings
+4. **Keep values clean UTF-8** — no escaped unicode sequences, no HTML entities for standard characters, no extraneous whitespace or extra blank lines injected into the value
+5. **Only rich text fields support HTML markup** — single-line text fields (Title, MetaTitle, MetaDescription, etc.) and multi-line text fields must contain **plain text only** with no HTML tags; no line breaks of any kind in any field type
 
-**Example - WRONG:**
+**Example — WRONG (literal `\n` sequences and mixed formatting):**
 ```
-"Welcome to our site.\nThis is the second line.\nAnd the third line."
-```
-
-**Example - CORRECT:**
-```
-"<p>Welcome to our site.</p><p>This is the second line.</p><p>And the third line.</p>"
+"Rain chance: 60%\n\nWind: S 5–11 mph\n\nEvent Notes\n\nWed evening: Lightning vs. Red Wings\nIndoor event."
 ```
 
-> **💡 Why?** Sitecore rich text fields expect HTML markup. Using `\n` characters results in content that doesn't display with proper line breaks in the editor or on the site.
+**Example — WRONG (actual newlines/line feeds embedded in value):**
+```
+"Rain chance: 60%
+
+Wind: S 5–11 mph"
+```
+
+**Example — CORRECT (clean HTML, no line feeds):**
+```
+"<p>Rain chance: 60%</p><p>Wind: S 5–11 mph</p><h2>Event Notes</h2><p>Wed evening: Lightning vs. Red Wings — Indoor event.</p>"
+```
+
+**Example — CORRECT (single-line/plain text field, no HTML, no line feeds):**
+```
+"Rain chance: 60% | Wind: S 5-11 mph"
+```
+
+> **🚨 CRITICAL:** When constructing field values, the string you pass to `updateContent` must be a single clean string with no embedded newlines, no `\n` escape sequences, and no stray whitespace between tags. Sitecore stores exactly what you send — any `\n` or line feed will appear as a literal character in the database and will break rendering or display as garbage in the editor.
 
 ### Tool Usage Protocol
 **Before each tool call**, provide a brief 1-line explanation of *why* you're using that tool:
