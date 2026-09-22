@@ -14,8 +14,11 @@ import type { SamplePrompt } from '@/lib/tools/types';
 import { estimateMessagesTokens, estimateToolResultTokens } from '@/lib/token-estimator';
 import type { ChatMessageMetadata, ChatUIMessage } from '@/app/api/chat/route';
 
-// Get available tools from registry dynamically
-const AVAILABLE_TOOLS = getToolDefinitions().map(def => ({
+type ToolSummary = { name: string; description: string; category: string };
+
+// The registry holds every tool so any of them can be executed; which ones the model is
+// actually offered depends on the server's tool mode, so the panel asks the server.
+const REGISTERED_TOOLS: ToolSummary[] = getToolDefinitions().map(def => ({
   name: def.name,
   description: def.description,
   category: def.category,
@@ -102,10 +105,24 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
   });
   
   const [input, setInput] = useState('');
+  const [activeTools, setActiveTools] = useState<ToolSummary[]>(REGISTERED_TOOLS);
+  const [toolMode, setToolMode] = useState<string | null>(null);
   const [showTools, setShowTools] = useState(false);
   const [showTokenStats, setShowTokenStats] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetch('/api/tools')
+      .then((res) => res.json())
+      .then((data: { mode: string; tools: ToolSummary[] }) => {
+        if (Array.isArray(data.tools)) setActiveTools(data.tools);
+        setToolMode(data.mode ?? null);
+      })
+      .catch(() => {
+        // Keep the registry listing rather than showing nothing.
+      });
+  }, []);
   const [serverTokens, setServerTokens] = useState<{
     prompt: number;
     completion: number;
@@ -351,7 +368,7 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
       {/* Chat Header */}
       <div className="border-b px-4 py-3 flex items-center justify-between">
         <div className="flex-1">
-          <h2 className="font-semibold text-lg">Agentic API Agent</h2>
+          <h2 className="font-semibold text-lg">Buckley</h2>
           <p className="text-sm text-muted-foreground">
             Manage XM Cloud content using the Agentic API - create, update, analyze, and explore your content
           </p>
@@ -377,7 +394,7 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
         >
           <span>🔧</span>
           <span>Tools</span>
-          <Badge colorScheme="neutral" className="ml-1">{AVAILABLE_TOOLS.length}</Badge>
+          <Badge colorScheme="neutral" className="ml-1">{activeTools.length}</Badge>
         </Button>
       </div>
 
@@ -446,7 +463,15 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
       {showTools && (
         <div className="border-b bg-muted/30 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-sm">Available Tools ({AVAILABLE_TOOLS.length})</h3>
+            <h3 className="font-medium text-sm">
+              Available Tools ({activeTools.length})
+              {toolMode && (
+                <span className="text-muted-foreground font-normal">
+                  {' '}— {toolMode} mode
+                  {toolMode !== 'full' && `, ${REGISTERED_TOOLS.length} registered`}
+                </span>
+              )}
+            </h3>
             <button 
               onClick={() => setShowTools(false)}
               className="text-muted-foreground hover:text-foreground text-sm"
@@ -455,7 +480,7 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
             </button>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            {AVAILABLE_TOOLS.map((tool) => (
+            {activeTools.map((tool) => (
               <div key={tool.name} className="bg-background rounded-lg p-3 border text-sm">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium">{tool.name}</span>
@@ -474,7 +499,7 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">Hello, I'm the Sitecore 360 Assistant.</h3>
+              <h3 className="text-lg font-medium mb-2">Hello, I&apos;m Buckley.</h3>
               <p className="text-muted-foreground">
                 I have a variety of skills and tools that will allow me to help you.
               </p>

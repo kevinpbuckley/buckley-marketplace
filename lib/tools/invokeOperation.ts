@@ -30,13 +30,18 @@ export const aiTool = tool({
 type InvokeInput = z.infer<typeof inputSchema>;
 
 /**
- * The SDK resolves `sitecoreContextId` per call, so inject it when the operation takes a
- * query bag and the model did not supply one.
+ * Only the XM Cloud and AI services take `sitecoreContextId`. Host-bridge keys
+ * (`host.user`, `site.context`, `pages.reloadCanvas`) take no params at all, and passing a
+ * query bag to them fails, so leave those untouched.
  */
-function withContextId(
+function buildParams(
+  key: string,
   params: Record<string, unknown> | undefined,
   contextId: string
-): Record<string, unknown> {
+): Record<string, unknown> | undefined {
+  const isServiceCall = key.startsWith('xmc.') || key.startsWith('ai.');
+  if (!isServiceCall) return params && Object.keys(params).length ? params : undefined;
+
   const next = { ...(params ?? {}) };
   const query = (next.query ?? {}) as Record<string, unknown>;
   if (query.sitecoreContextId === undefined) {
@@ -53,15 +58,14 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    const resolved = withContextId(params, context.contextId);
+    const resolved = buildParams(key, params, context.contextId);
+    const options = resolved ? { params: resolved } : undefined;
 
     // The SDK's key unions are generated per namespace; this tool is deliberately generic.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = context.client as any;
     const response =
-      kind === 'mutation'
-        ? await client.mutate(key, { params: resolved })
-        : await client.query(key, { params: resolved });
+      kind === 'mutation' ? await client.mutate(key, options) : await client.query(key, options);
 
     const payload = response?.data?.data ?? response?.data ?? response;
 

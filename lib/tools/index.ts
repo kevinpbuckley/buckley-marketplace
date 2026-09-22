@@ -80,6 +80,8 @@ import { definition as getSiteContextDefinition, aiTool as getSiteContextAiTool,
 import { definition as getCurrentUserDefinition, aiTool as getCurrentUserAiTool, execute as getCurrentUserExecute } from './getCurrentUser';
 import { definition as getPageScreenshotDefinition, aiTool as getPageScreenshotAiTool, execute as getPageScreenshotExecute } from './getPageScreenshot';
 import { definition as getPagePathByLiveUrlDefinition, aiTool as getPagePathByLiveUrlAiTool, execute as getPagePathByLiveUrlExecute } from './getPagePathByLiveUrl';
+import { definition as readBrandContextDefinition, aiTool as readBrandContextAiTool, execute as readBrandContextExecute } from './readBrandContext';
+import { definition as readBrandKitDefinition, aiTool as readBrandKitAiTool, execute as readBrandKitExecute } from './readBrandKit';
 import { definition as generateBrandReviewDefinition, aiTool as generateBrandReviewAiTool, execute as generateBrandReviewExecute } from './generateBrandReview';
 import { definition as queryDeliveryGraphqlDefinition, aiTool as queryDeliveryGraphqlAiTool, execute as queryDeliveryGraphqlExecute } from './queryDeliveryGraphql';
 
@@ -106,6 +108,8 @@ const toolRegistry: Map<string, ToolModule> = new Map([
   ['getCurrentUser', { definition: getCurrentUserDefinition, aiTool: getCurrentUserAiTool, execute: getCurrentUserExecute }],
   ['getPageScreenshot', { definition: getPageScreenshotDefinition, aiTool: getPageScreenshotAiTool, execute: getPageScreenshotExecute }],
   ['getPagePathByLiveUrl', { definition: getPagePathByLiveUrlDefinition, aiTool: getPagePathByLiveUrlAiTool, execute: getPagePathByLiveUrlExecute }],
+  ['readBrandContext', { definition: readBrandContextDefinition, aiTool: readBrandContextAiTool, execute: readBrandContextExecute }],
+  ['readBrandKit', { definition: readBrandKitDefinition, aiTool: readBrandKitAiTool, execute: readBrandKitExecute }],
   ['generateBrandReview', { definition: generateBrandReviewDefinition, aiTool: generateBrandReviewAiTool, execute: generateBrandReviewExecute }],
   ['queryDeliveryGraphql', { definition: queryDeliveryGraphqlDefinition, aiTool: queryDeliveryGraphqlAiTool, execute: queryDeliveryGraphqlExecute }],
 

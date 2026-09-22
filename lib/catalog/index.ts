@@ -10,6 +10,10 @@ export interface CatalogOperation {
   summary: string;
   operation: string | null;
   params: string | null;
+  /** Name of the 2xx payload type, e.g. `SiteInformationResponse`. */
+  responseType?: string;
+  /** The payload's fields, when the SDK types it. Absent means the SDK returns `unknown`. */
+  response?: string;
   referencedTypes?: Record<string, string>;
 }
 

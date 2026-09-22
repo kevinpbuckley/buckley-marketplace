@@ -38,6 +38,13 @@ export const aiTool = tool({
       deprecated: op.deprecated,
       ...(op.deprecated && { useInstead: replacementFor(op.key) }),
       params: op.params,
+      ...(op.response
+        ? { returns: op.responseType, responseShape: op.response }
+        : {
+            returns: op.responseType ?? 'not typed by the SDK',
+            responseNote:
+              'The SDK does not type this response. Inspect what comes back rather than assuming a shape.',
+          }),
       ...(op.referencedTypes && { referencedTypes: op.referencedTypes }),
       next: `Call invokeOperation with key "${op.key}" and params matching the shape above.`,
     };

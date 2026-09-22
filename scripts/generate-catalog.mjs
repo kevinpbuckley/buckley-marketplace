@@ -66,6 +66,23 @@ function tidy(block) {
     .trim();
 }
 
+/**
+ * The success response for an operation is `{Op}Responses`, an object keyed by status code
+ * whose 2xx entry names the payload type. Knowing the response shape matters as much as the
+ * params: without it the agent has to call an operation just to discover what came back.
+ */
+function resolveResponse(types, operationName) {
+  const pascal = operationName.charAt(0).toUpperCase() + operationName.slice(1);
+  const block = types.get(`${pascal}Responses`);
+  if (!block) return null;
+
+  const success = block.match(/^\s*(?:2\d\d|'2\d\d'|"2\d\d"):\s*([^;\n]+);/m);
+  if (!success) return null;
+
+  const named = success[1].trim().replace(/^Array<(.+)>$/, '$1').replace(/\[\]$/, '').trim();
+  return { name: success[1].trim(), body: types.has(named) ? tidy(types.get(named)) : null };
+}
+
 const operations = [];
 
 for (const file of walk(SDK_ROOT)) {
@@ -121,14 +138,33 @@ for (const file of walk(SDK_ROOT)) {
       const typeName = op.charAt(0).toUpperCase() + op.slice(1) + 'Data';
       current.operation = op;
       current.params = types.has(typeName) ? tidy(types.get(typeName)) : null;
-      // `body: SomeRequestModel` is useless without the model's shape, so inline one level.
-      if (current.params) {
-        const refs = {};
-        for (const [, name] of current.params.matchAll(/\b([A-Z]\w+)\b/g)) {
-          if (types.has(name) && !refs[name]) refs[name] = tidy(types.get(name));
-        }
-        if (Object.keys(refs).length) current.referencedTypes = refs;
+
+      const resolved = resolveResponse(types, op);
+      if (resolved) {
+        current.responseType = resolved.name;
+        if (resolved.body) current.response = resolved.body;
       }
+
+      // `body: SomeRequestModel` and `data: Array<SomeModel>` are useless without the model's
+      // shape. Resolve transitively, since those models reference further models of their
+      // own, but cap it so a deeply linked schema cannot pull in half the type graph.
+      const refs = {};
+      let frontier = [current.params, current.response].filter(Boolean);
+
+      for (let depth = 0; depth < 3 && frontier.length && Object.keys(refs).length < 24; depth++) {
+        const next = [];
+        for (const text of frontier) {
+          for (const [, name] of text.matchAll(/\b([A-Z]\w+)\b/g)) {
+            if (!types.has(name) || refs[name] || name === current.responseType) continue;
+            refs[name] = tidy(types.get(name));
+            next.push(refs[name]);
+          }
+        }
+        frontier = next;
+      }
+
+      if (Object.keys(refs).length) current.referencedTypes = refs;
+
       delete current._pending;
     }
   }
@@ -188,9 +224,11 @@ writeFileSync(
 
 const deprecatedCount = operations.filter((o) => o.deprecated).length;
 const missingParams = operations.filter((o) => o.params === null && o.operation).length;
+const withResponse = operations.filter((o) => o.response).length;
 console.log(`catalog: ${operations.length} operations -> lib/catalog/catalog.json`);
 console.log(`  deprecated: ${deprecatedCount}`);
 console.log(`  unresolved params: ${missingParams}`);
+console.log(`  with response shape: ${withResponse}`);
 for (const ns of [...new Set(operations.map((o) => o.namespace))].sort()) {
   console.log(`  ${ns}: ${operations.filter((o) => o.namespace === ns).length}`);
 }
