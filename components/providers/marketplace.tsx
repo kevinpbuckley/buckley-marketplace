@@ -13,6 +13,7 @@ import {
 } from "@sitecore-marketplace-sdk/client";
 import { XMC } from "@sitecore-marketplace-sdk/xmc";
 import { AI } from "@sitecore-marketplace-sdk/ai";
+import { Brand } from "@/lib/sdk/brand-module";
 import type { PagesContext } from "@sitecore-marketplace-sdk/client";
 
 interface ClientSDKProviderProps {
@@ -81,7 +82,7 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
       const config = {
         target: window.parent,
         // AI registers the ai.skills.* routes used by generateBrandReview.
-        modules: [XMC, AI],
+        modules: [XMC, AI, Brand],
       };
       try {
         setLoading(true);

@@ -3,6 +3,8 @@
   "description": "Buckley — Sitecore XM Cloud agent",
   "systemPromptFile": "./system-prompt.md",
   "tools": [
+    "readBrandKit",
+    "readBrandContext",
     "getPagePathByLiveUrl",
     "generateBrandReview",
     "queryDeliveryGraphql",

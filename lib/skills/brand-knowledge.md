@@ -1,54 +1,73 @@
 ---
-name: Brand
-description: How to answer brand questions — brand review works, reading the brand kit or brand context does not.
-when_to_use: Any question about brand — tone of voice, messaging, visual rules, glossary, or whether some copy is on-brand.
+name: Brand kit and brand context
+description: The two brand sources — structured rules in the brand kit, narrative knowledge in the brand context — which to read for a given question, and the JSON each returns.
+when_to_use: Any question about brand — tone of voice, messaging, audiences, positioning, visual rules, glossary, proof points, or whether some copy is on-brand.
 ---
 
-# Brand
+# Brand kit and brand context
 
-Sitecore holds brand information in two places, and you can read neither of them. You can
-review copy against the brand kit, which is a genuinely useful substitute for most questions.
+Sitecore holds brand information in two separate places. Picking the wrong one is the most
+common mistake here.
 
 | | **Brand kit** | **Brand context** |
 |---|---|---|
-| Holds | Structured rules: Tone of Voice, Visual Guidelines, Glossary, Dos and Don'ts | Markdown documents: audiences, messaging, product, customer evidence |
+| Holds | Structured rules an editor fills in | Brand knowledge as markdown documents |
+| Shape | sections → fields | folders → documents |
+| Typical content | Tone of Voice, Visual Guidelines, Image Style, Glossary, Dos and Don'ts, Grammar Guidelines | Audiences, Messaging, Product, Content Guidelines, Customer Evidence |
 | Attached to | a **site** | the **organization** |
-| Can you read it? | **No** | **No** |
+| Tool | `readBrandKit` | `readBrandContext` |
 
-No operation in the Marketplace SDK exposes either one's contents. `searchOperations` will
-not find one. Do not go looking, and do not retry with different wording.
+The brand kit is the **rulebook** — prescriptive, per site. The brand context is the
+**briefing** — long-form narrative about the business, per organization.
 
-## What works: brand review
+## Which one answers the question
 
-`generateBrandReview` sends copy to the brand kit and returns compliance scores, the specific
-violations, and suggested fixes. The findings name the sections and rules they come from, so
-the review often reveals the guideline the user was really asking about.
+- Tone of voice, visual rules, allowed wording, glossary → **brand kit**
+- Audiences, personas, positioning, value propositions, proof points, competitors → **brand context**
+- "Is this copy on-brand?" → `generateBrandReview`, which scores it against the kit
+- "Tell me about the brand" → list both, then read only what the question needs
 
-1. **Get the brand kit id.** `invokeOperation` with key `xmc.agent.sitesGetSiteDetails`,
-   kind `query`, params `{ path: { siteId } }`. The response's `brand_information` field holds
-   the brand kit id — and only the id, never the guidance. Get `siteId` from
-   `getCurrentSiteContext` when in the Pages editor.
-2. **Get the copy.** `xmc.agent.pagesGetPageHtml` for a rendered page, or
-   `xmc.agent.contentGetContentItemById` for specific fields. If the user supplied the copy in
-   the conversation, just use that.
-3. **Review it.** `generateBrandReview` with the `brandKitId` and `input` as named fields,
-   e.g. `{ headline: "...", body: "..." }`.
-4. **Report.** Lead with the score, then each violation with the offending copy quoted and the
-   fix beside it. Report the fixes; do not apply them to the page unless asked.
+## Brand kit
 
-## Answering "what is our tone of voice?"
+1. `readBrandKit` with `brandKitId` returns the kit summary and its section names.
+2. `readBrandKit` again with `section` returns that section's fields.
 
-You cannot read the Tone of Voice section. Say so, then offer the route that does work: run a
-review over some representative copy and report what the findings reveal about the rules. Name
-the page or ask which copy to use.
+Get the id from `xmc.agent.sitesGetSiteDetails`, whose `brand_information` field holds **only
+the id** — never the guidance. Do not present that id as brand content. Omit `brandKitId` to
+list every kit in the organization.
 
-If there is no copy to review, say the guidelines are visible to them directly in Sitecore's
-brand management UI and leave it there.
+A section's fields come back as:
+
+```json
+{ "section": "Tone of Voice",
+  "fields": [ { "name": "Tone of voice", "type": "text", "value": "…", "intent": "…" },
+              { "name": "Tone scenarios", "type": "…", "value": [ … ] } ] }
+```
+
+`value` holds the content. It is a string for `text` fields but can be an **array of objects**
+for structured fields such as tone scenarios or colour palettes — read it rather than assuming
+a string, and summarise the entries instead of dumping raw JSON.
+
+## Brand context
+
+1. `readBrandContext` with `brandContextId` returns every document as a `Folder / Document`
+   path, e.g. `Messaging / Messaging Framework`.
+2. `readBrandContext` again with `document` returns that document's markdown.
+
+Omit `brandContextId` to list the organization's contexts. `runStatus` should be `completed`;
+anything else means it is still being built and may be incomplete.
+
+## If a read is denied
+
+These endpoints are part of the Agent API but absent from the published SDK, so they are
+registered by a local module in this app. A 401 or 403 means the Marketplace app registration
+lacks the brand read scope — the app has the brand **review** scope, which is separate.
+
+When that happens: say the guidelines cannot be read, then offer `generateBrandReview` over
+real copy instead. Its findings name the rules they come from and usually answer the
+underlying question. Do not retry, and do not search for another operation — there isn't one.
 
 ## Rules
 
-- **Never infer brand guidance.** Not from the brand name, the industry, or the page copy. An
-  invented answer that sounds plausible is worse than admitting the gap, because the user
-  cannot tell which one they got.
-- A 401 from the review means the app registration lacks the brand review scope. Report that
-  plainly rather than retrying.
+- **Never infer brand guidance.** Not from the brand name, the industry, or the page copy.
+- Read the documents the question needs. The tree can hold 18 or more, and they are long.
