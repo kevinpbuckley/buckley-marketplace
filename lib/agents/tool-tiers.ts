@@ -15,8 +15,6 @@ export const MINIMAL_TOOLS = [
   'describeOperation',
   'invokeOperation',
   'loadSkill',
-  'readBrandKit',
-  'readBrandContext',
   'getCurrentPageContext',
   'getCurrentSiteContext',
 ] as const;
@@ -75,7 +73,6 @@ export const CORE_TOOLS = [
 
   // Brand review — the one AI skill the SDK exposes
   'generateBrandReview',
-  'readBrandKit',
 
   // Jobs — revertJob matters because Agent API writes are reversible by job
   'listJobs',

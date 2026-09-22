@@ -35,20 +35,14 @@ and fix suggestions. It needs a brand kit id, which comes from the host, not fro
 4. **Report.** Lead with the score, then each violation with the offending copy quoted and
    the suggested fix beside it.
 
-## Reading the guidelines themselves
+## If the user wants the guidelines themselves
 
-To answer questions about tone of voice, visual guidelines, glossary and so on — rather than
-scoring content against them — use `readBrandKit`:
+The brand kit's sections cannot be read through the Marketplace SDK — no operation exposes
+them. `xmc.agent.sitesGetSiteDetails` returns a `brand_information` field, but its value is
+only the brand kit id, so never present it as guidance.
 
-1. `readBrandKit` with just the `brandKitId` lists the kit's sections.
-2. Call it again with `section` set to one of those names to read that section's content.
-
-Sitecore's own APIs do not carry this. `xmc.agent.sitesGetSiteDetails` returns a
-`brand_information` field, but its value is only the brand kit id, not the guidance, so do
-not present it as brand content.
-
-If `readBrandKit` reports that the host did not route the request, say that the brand kit
-content is not reachable from this app rather than guessing at the guidelines.
+Say the content is unavailable and offer a review of specific copy instead, which returns the
+reasoning behind each finding. See the brand kit and brand context skill.
 
 ## Notes
 
