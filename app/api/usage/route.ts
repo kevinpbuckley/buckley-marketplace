@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTokenUsage, resetTokenUsage, getModelName } from '@/lib/token-tracker';
+import { deploymentName } from '@/lib/azure-openai';
 
 // GET - retrieve current token usage
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get('sessionId') || 'default';
   const usage = getTokenUsage(sessionId);
-  const modelName = usage?.modelName || getModelName() || process.env.AZURE_OPENAI_MODEL || 'gpt-4o-mini';
+  const modelName = usage?.modelName || getModelName() || deploymentName;
   const contextSize = parseInt(process.env.NEXT_PUBLIC_MAX_CONTEXT_SIZE || '128000', 10);
   
   return NextResponse.json({

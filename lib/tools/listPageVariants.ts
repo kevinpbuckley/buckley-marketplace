@@ -40,7 +40,7 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    const response = await context.client.query("xmc.xmapp.listPageVariants", {
+    const response = await context.client.query("xmc.pages.listPageVariants", {
       params: {
         query: { sitecoreContextId: context.contextId, language: language },
         path: { pageId: pageId },

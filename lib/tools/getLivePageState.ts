@@ -37,7 +37,7 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    const response = await context.client.query("xmc.xmapp.getLivePageState", {
+    const response = await context.client.query("xmc.pages.getLivePageState", {
       params: {
         query: { 
           sitecoreContextId: context.contextId,

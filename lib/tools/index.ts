@@ -70,6 +70,19 @@ import { definition as getCurrentPageContextDefinition, aiTool as getCurrentPage
 import { definition as getCurrentSiteContextDefinition, aiTool as getCurrentSiteContextAiTool, execute as getCurrentSiteContextExecute } from './getCurrentSiteContext';
 import { definition as refreshPageViewDefinition, aiTool as refreshPageViewAiTool, execute as refreshPageViewExecute } from './refreshPageView';
 
+// Only client-executable tools belong here — this module is imported by ChatWindow, so a
+// server-only dependency (the catalog, the skills loader) would break the client bundle.
+// searchOperations/describeOperation/loadSkill live in ./server-tools instead.
+import { definition as invokeOperationDefinition, aiTool as invokeOperationAiTool, execute as invokeOperationExecute } from './invokeOperation';
+
+// Host bridge + newly covered Agent API operations
+import { definition as getSiteContextDefinition, aiTool as getSiteContextAiTool, execute as getSiteContextExecute } from './getSiteContext';
+import { definition as getCurrentUserDefinition, aiTool as getCurrentUserAiTool, execute as getCurrentUserExecute } from './getCurrentUser';
+import { definition as getPageScreenshotDefinition, aiTool as getPageScreenshotAiTool, execute as getPageScreenshotExecute } from './getPageScreenshot';
+import { definition as getPagePathByLiveUrlDefinition, aiTool as getPagePathByLiveUrlAiTool, execute as getPagePathByLiveUrlExecute } from './getPagePathByLiveUrl';
+import { definition as generateBrandReviewDefinition, aiTool as generateBrandReviewAiTool, execute as generateBrandReviewExecute } from './generateBrandReview';
+import { definition as queryDeliveryGraphqlDefinition, aiTool as queryDeliveryGraphqlAiTool, execute as queryDeliveryGraphqlExecute } from './queryDeliveryGraphql';
+
 // Import Pages API tools
 import { definition as getPageWorkflowDefinition, aiTool as getPageWorkflowAiTool, execute as getPageWorkflowExecute } from './getPageWorkflow';
 import { definition as getPageVersionsDefinition, aiTool as getPageVersionsAiTool, execute as getPageVersionsExecute } from './getPageVersions';
@@ -85,6 +98,17 @@ import { definition as deletePageItemDefinition, aiTool as deletePageItemAiTool,
  */
 const toolRegistry: Map<string, ToolModule> = new Map([
   // Context tools (Pages editor)
+  // Catalog
+  ['invokeOperation', { definition: invokeOperationDefinition, aiTool: invokeOperationAiTool, execute: invokeOperationExecute }],
+
+  // Host bridge
+  ['getSiteContext', { definition: getSiteContextDefinition, aiTool: getSiteContextAiTool, execute: getSiteContextExecute }],
+  ['getCurrentUser', { definition: getCurrentUserDefinition, aiTool: getCurrentUserAiTool, execute: getCurrentUserExecute }],
+  ['getPageScreenshot', { definition: getPageScreenshotDefinition, aiTool: getPageScreenshotAiTool, execute: getPageScreenshotExecute }],
+  ['getPagePathByLiveUrl', { definition: getPagePathByLiveUrlDefinition, aiTool: getPagePathByLiveUrlAiTool, execute: getPagePathByLiveUrlExecute }],
+  ['generateBrandReview', { definition: generateBrandReviewDefinition, aiTool: generateBrandReviewAiTool, execute: generateBrandReviewExecute }],
+  ['queryDeliveryGraphql', { definition: queryDeliveryGraphqlDefinition, aiTool: queryDeliveryGraphqlAiTool, execute: queryDeliveryGraphqlExecute }],
+
   ['getCurrentPageContext', { definition: getCurrentPageContextDefinition, aiTool: getCurrentPageContextAiTool, execute: getCurrentPageContextExecute }],
   ['getCurrentSiteContext', { definition: getCurrentSiteContextDefinition, aiTool: getCurrentSiteContextAiTool, execute: getCurrentSiteContextExecute }],
   ['refreshPageView', { definition: refreshPageViewDefinition, aiTool: refreshPageViewAiTool, execute: refreshPageViewExecute }],

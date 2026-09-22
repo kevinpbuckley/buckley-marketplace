@@ -49,69 +49,17 @@ export const execute: ToolExecutor = async (input, context) => {
     return { success: false, error: 'No context ID available' };
   }
 
-  try {
-    // Try potential SDK operation for workflow commands
-    try {
-      const response = await context.client.mutate("xmc.pages.executeWorkflowCommand" as any, {
-        params: {
-          path: { pageId },
-          body: {
-            commandId,
-            comment: comment || '',
-            language: language || 'en',
-          },
-          query: {
-            sitecoreContextId: context.contextId,
-          },
-        },
-      });
-
-      if (response.data) {
-        return {
-          success: true,
-          output: response.data,
-        };
-      }
-    } catch (sdkError) {
-      // SDK operation might not exist
-      console.log('[executeWorkflowCommand] SDK operation not available');
-    }
-
-    // Try alternative Agent API workflow operation if it exists
-    try {
-      const response = await context.client.mutate("xmc.agent.workflowExecuteCommand" as any, {
-        params: {
-          path: { pageId },
-          body: {
-            commandId,
-            comment: comment || '',
-          },
-          query: {
-            sitecoreContextId: context.contextId,
-            language: language || 'en',
-          },
-        },
-      });
-
-      if (response.data) {
-        return {
-          success: true,
-          output: response.data,
-        };
-      }
-    } catch (agentError) {
-      console.log('[executeWorkflowCommand] Agent API workflow operation not available');
-    }
-
-    // Return informative error about SDK limitation
-    return {
-      success: false,
-      error: 'Workflow command execution requires Pages API integration. The Agent API is read-only for workflow data. This operation needs SDK support for POST /api/v1/pages/{pageId}/workflow/command (or similar endpoint). Please see docs/PAGES_API_INTEGRATION.md for details.',
-    };
-  } catch (err) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to execute workflow command',
-    };
-  }
+  // No SDK operation covers executing a workflow command: it is absent from both
+  // xmc.pages.* and xmc.agent.* (verified against the generated catalog). The Agent API is
+  // read-only for workflow data. Report that plainly rather than failing opaquely.
+  return {
+    success: false,
+    error:
+      'Executing workflow commands is not supported by the Marketplace SDK. The Agent API exposes workflow state as read-only, and no xmc.pages or xmc.agent operation performs a transition.',
+    alternatives: [
+      'Use getPageWorkflow to read the current state and the commands available to an author.',
+      'Ask an author to perform the transition in the Sitecore Workbox.',
+    ],
+    requested: { pageId, commandId, comment, language },
+  };
 };

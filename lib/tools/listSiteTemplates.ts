@@ -35,7 +35,7 @@ export const execute: ToolExecutor = async (_input, context) => {
   }
 
   try {
-    const response = await context.client.query("xmc.xmapp.listSiteTemplates", {
+    const response = await context.client.query("xmc.sites.listSiteTemplates", {
       params: {
         query: { sitecoreContextId: context.contextId },
       },

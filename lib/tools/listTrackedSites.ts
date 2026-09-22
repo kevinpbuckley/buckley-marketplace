@@ -38,7 +38,7 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    const response = await context.client.query("xmc.xmapp.listTrackedSites", {
+    const response = await context.client.query("xmc.sites.listTrackedSites", {
       params: {
         query: { sitecoreContextId: context.contextId },
         path: { analyticsIdentifier: analyticsIdentifier },

@@ -37,7 +37,7 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    const response = await context.client.query("xmc.xmapp.retrieveHost", {
+    const response = await context.client.query("xmc.sites.retrieveHost", {
       params: {
         query: { sitecoreContextId: context.contextId },
         path: { hostId: hostId, siteId: siteId },

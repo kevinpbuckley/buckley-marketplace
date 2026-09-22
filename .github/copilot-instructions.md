@@ -86,9 +86,10 @@ npm run dev  # Starts on https://localhost:3000 with self-signed cert
 
 ### Environment Variables
 ```env
-AZURE_API_KEY=<your-key>           # Azure OpenAI API key
-AZURE_OPENAI_MODEL=gpt-4o-mini     # Model deployment name
-AZURE_API_VERSION=2024-12-01-preview
+AZURE_OPENAI_RESOURCE_NAME=<resource>    # Azure OpenAI resource name
+AZURE_OPENAI_API_KEY=<your-key>          # Azure OpenAI API key
+AZURE_OPENAI_DEPLOYMENT=gpt-5.6-luna     # Model deployment name
+AZURE_OPENAI_API_VERSION=2024-10-21
 ```
 
 ## Common Patterns

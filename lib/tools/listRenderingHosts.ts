@@ -38,7 +38,7 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    const response = await context.client.query("xmc.xmapp.getRenderingHosts", {
+    const response = await context.client.query("xmc.sites.getRenderingHosts", {
       params: {
         query: { sitecoreContextId: context.contextId },
         path: { siteId: siteId },

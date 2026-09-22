@@ -38,9 +38,9 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    const response = await context.client.query("xmc.agent.pagesGetPageHtml", {
+    const response = await context.client.query('xmc.agent.pagesGetPageHtml', {
       params: {
-        query: { 
+        query: {
           sitecoreContextId: context.contextId,
           language: language,
         },
@@ -50,7 +50,7 @@ export const execute: ToolExecutor = async (input, context) => {
 
     const responseData = response.data?.data;
     const html = typeof responseData === 'string' ? responseData : (responseData as { html?: string })?.html ?? '';
-    
+
     // Basic analysis of the HTML
     const hasInlineStyles = /<[^>]+style\s*=/i.test(html) || /<style[^>]*>/i.test(html);
     const hasInlineScripts = /<script[^>]*>[^<]+<\/script>/i.test(html);

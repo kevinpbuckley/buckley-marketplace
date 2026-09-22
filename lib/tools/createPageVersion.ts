@@ -8,8 +8,10 @@ export const definition: ToolDefinition = {
   category: 'Pages API',
   inputSchema: z.object({
     pageId: z.string().describe('The ID of the page'),
+    site: z.string().optional().describe('The site name the page belongs to'),
     versionName: z.string().optional().describe('Optional name for the new version (e.g., "Before Black Friday changes")'),
     language: z.string().optional().describe('Language code (e.g., "en")'),
+    baseVersion: z.number().optional().describe('Version number to base the new version on'),
   }),
   examples: [
     {
@@ -37,10 +39,12 @@ export const aiTool = tool({
 });
 
 export const execute: ToolExecutor = async (input, context) => {
-  const { pageId, versionName, language } = input as {
+  const { pageId, site, versionName, language, baseVersion } = input as {
     pageId: string;
+    site?: string;
     versionName?: string;
     language?: string;
+    baseVersion?: number;
   };
 
   if (!context.contextId) {
@@ -48,37 +52,22 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    // Try potential SDK operation for creating versions
-    try {
-      const response = await context.client.mutate("xmc.pages.createVersion" as any, {
-        params: {
-          path: { pageId },
-          body: {
-            versionName: versionName || '',
-            language: language || 'en',
-          },
-          query: {
-            sitecoreContextId: context.contextId,
-          },
+    const response = await context.client.mutate('xmc.pages.addPageVersion', {
+      params: {
+        path: { pageId },
+        body: {
+          ...(site && { site }),
+          ...(versionName && { versionName }),
+          ...(language && { language }),
+          ...(baseVersion !== undefined && { baseVersion }),
         },
-      });
+        query: {
+          sitecoreContextId: context.contextId,
+        },
+      },
+    });
 
-      if (response.data) {
-        return {
-          success: true,
-          output: response.data,
-        };
-      }
-    } catch (sdkError) {
-      // SDK operation might not exist
-      console.log('[createPageVersion] SDK operation not available');
-    }
-
-    // Return informative error about SDK limitation
-    return {
-      success: false,
-      error: 'Version creation requires Pages API integration (POST /api/v1/pages/{pageId}/versions). This operation is not yet available in the Marketplace SDK. Please see docs/PAGES_API_INTEGRATION.md for details.',
-    };
+    return { success: true, output: response.data ?? null };
   } catch (err) {
     return {
       success: false,

@@ -43,7 +43,7 @@ export const execute: ToolExecutor = async (input, context) => {
 
   try {
     // Use existing SDK operation that checks live state
-    const response = await context.client.query("xmc.xmapp.getLivePageState", {
+    const response = await context.client.query("xmc.pages.getLivePageState", {
       params: {
         query: {
           sitecoreContextId: context.contextId,
@@ -82,7 +82,7 @@ export const execute: ToolExecutor = async (input, context) => {
         isLive: data?.isLive ?? false,
         liveState: data,
         publishingInfo,
-        note: 'Edge publication status from xmc.xmapp.getLivePageState. For enhanced publishing details, Pages API (GET /api/v1/pages/{pageId}/live) provides additional metadata.',
+        note: 'Edge publication status from xmc.pages.getLivePageState.',
       },
     };
   } catch (err) {

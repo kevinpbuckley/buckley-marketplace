@@ -42,8 +42,10 @@ Edit `.env.local` with your credentials:
 
 ```env
 # Azure OpenAI Configuration
-AZURE_FOUNDRY_API_KEY=your-azure-api-key
-AZURE_OPENAI_MODEL=gpt-4o-mini
+AZURE_OPENAI_RESOURCE_NAME=your-azure-resource-name
+AZURE_OPENAI_API_KEY=your-azure-api-key
+AZURE_OPENAI_DEPLOYMENT=gpt-5.6-luna
+AZURE_OPENAI_API_VERSION=2024-10-21
 ```
 
 ### 3. Development

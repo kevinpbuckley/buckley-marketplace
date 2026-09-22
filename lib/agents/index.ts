@@ -5,15 +5,15 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 // Import agent configurations
-import reviewAssistantConfigJson from './agent.json';
+import buckleyConfigJson from './agent.json';
 
 // Load system prompt from markdown file
 const systemPromptPath = join(process.cwd(), 'lib', 'agents', 'system-prompt.md');
 const systemPrompt = readFileSync(systemPromptPath, 'utf-8');
 
 // Merge config with system prompt
-const reviewAssistantConfig: AgentConfig = {
-  ...reviewAssistantConfigJson as AgentConfig,
+const buckleyConfig: AgentConfig = {
+  ...buckleyConfigJson as AgentConfig,
   systemPrompt
 };
 
@@ -21,7 +21,7 @@ const reviewAssistantConfig: AgentConfig = {
  * Registry of all available agents
  */
 const agentRegistry: Map<string, AgentConfig> = new Map([
-  ['review-assistant', reviewAssistantConfig],
+  ['Buckley', buckleyConfig],
 ]);
 
 /**
@@ -41,12 +41,12 @@ export function getAgent(name: string): LoadedAgent | undefined {
 }
 
 /**
- * Get the default agent (review-assistant)
+ * Get the default agent (Buckley)
  */
 export function getDefaultAgent(): LoadedAgent {
-  const agent = getAgent('review-assistant');
+  const agent = getAgent('Buckley');
   if (!agent) {
-    throw new Error('Default agent "review-assistant" not found');
+    throw new Error('Default agent "Buckley" not found');
   }
   return agent;
 }

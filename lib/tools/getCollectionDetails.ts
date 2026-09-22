@@ -36,7 +36,7 @@ export const execute: ToolExecutor = async (input, context) => {
   }
 
   try {
-    const response = await context.client.query("xmc.xmapp.retrieveCollection", {
+    const response = await context.client.query("xmc.sites.retrieveCollection", {
       params: {
         query: { sitecoreContextId: context.contextId },
         path: { collectionId: collectionId },
