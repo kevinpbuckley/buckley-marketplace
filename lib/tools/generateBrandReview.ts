@@ -5,19 +5,12 @@ import type { ToolDefinition, ToolExecutor } from './types';
 const inputSchema = z.object({
   brandKitId: z
     .string()
-    .describe('Brand kit identifier. Get it from getSiteContext — do not guess one.'),
+    .describe(
+      "The site's brand kit id, from the brand_information field of xmc.agent.sitesGetSiteDetails. Never guess one."
+    ),
   input: z
     .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
     .describe('The content to review, as named fields, e.g. { headline: "...", body: "..." }'),
-  sections: z
-    .array(
-      z.object({
-        sectionId: z.string().describe('Brand kit section identifier'),
-        fieldIds: z.array(z.string()).optional().describe('Specific fields within the section'),
-      })
-    )
-    .optional()
-    .describe('Limit the review to specific brand kit sections. Omit to review against all.'),
 });
 
 export const definition: ToolDefinition = {
@@ -48,7 +41,7 @@ export const aiTool = tool({
 });
 
 export const execute: ToolExecutor = async (input, context) => {
-  const { brandKitId, input: content, sections } = input as z.infer<typeof inputSchema>;
+  const { brandKitId, input: content } = input as z.infer<typeof inputSchema>;
 
   if (!context.contextId) {
     return { success: false, error: 'No context ID available' };
@@ -58,10 +51,11 @@ export const execute: ToolExecutor = async (input, context) => {
     const response = await context.client.mutate('ai.skills.generateBrandReview', {
       params: {
         // The review API spells this `brandkitId`, while the host context uses `brandKitId`.
+        // `sections` is intentionally not exposed: it needs section ids, and no operation
+        // lists them, so offering it would only invite invented GUIDs.
         body: {
           brandkitId: brandKitId,
           input: content,
-          ...(sections?.length && { sections }),
         },
         query: { sitecoreContextId: context.contextId },
       },
@@ -72,7 +66,7 @@ export const execute: ToolExecutor = async (input, context) => {
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to generate brand review',
-      hint: 'Confirm the brandKitId came from getSiteContext — the site may have no brand kit associated.',
+      hint: "Confirm the brandKitId came from the site's brand_information field. A 401 means the app registration lacks the brand review scope.",
     };
   }
 };

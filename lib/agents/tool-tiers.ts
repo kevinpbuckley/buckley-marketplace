@@ -17,6 +17,8 @@ export const MINIMAL_TOOLS = [
   'loadSkill',
   'getCurrentPageContext',
   'getCurrentSiteContext',
+  // The only brand capability the SDK exposes, and the only answer to a brand question.
+  'generateBrandReview',
 ] as const;
 
 /**
