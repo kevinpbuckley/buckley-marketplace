@@ -1,7 +1,20 @@
 import { z } from 'zod';
 import { tool } from 'ai';
 import type { ToolDefinition, ToolExecutor } from './types';
+import { isBrandFailure } from '../sdk/brand-module';
 import type { BrandKitDetail, BrandKitSummary } from '../sdk/brand-module';
+
+/**
+ * ClientSDK wraps the module's return value in `data`, and the Agent API wraps some payloads
+ * in a `data` of their own, so the depth varies by endpoint. Unwrap whichever we got.
+ */
+function unwrap<T>(payload: unknown): T | undefined {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    const inner = (payload as { data?: unknown }).data;
+    if (inner !== undefined && inner !== null) return inner as T;
+  }
+  return payload as T | undefined;
+}
 
 const inputSchema = z.object({
   brandKitId: z
@@ -34,7 +47,9 @@ export const execute: ToolExecutor = async (input, context) => {
   try {
     if (!brandKitId) {
       const response = await context.client.query('brand.kits.list');
-      const kits = (response.data ?? []) as BrandKitSummary[];
+      const listed = unwrap<BrandKitSummary[] | unknown>(response.data);
+      if (isBrandFailure(listed)) return { success: false, error: listed.message };
+      const kits = (Array.isArray(listed) ? listed : []) as BrandKitSummary[];
       return {
         success: true,
         output: {
@@ -48,8 +63,12 @@ export const execute: ToolExecutor = async (input, context) => {
     const response = await context.client.query('brand.kits.getById', {
       params: { path: { brandkitId: brandKitId } },
     });
-    const kit = response.data as BrandKitDetail | undefined;
+    const kit = unwrap<BrandKitDetail>(response.data);
     const sections = kit?.sections ?? [];
+
+    if (isBrandFailure(kit)) {
+      return { success: false, error: kit.message };
+    }
 
     if (!section) {
       return {

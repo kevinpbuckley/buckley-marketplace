@@ -33,13 +33,30 @@ async function proxiedFetch(path: string): Promise<Response> {
   );
 }
 
-async function get<T>(path: string): Promise<T> {
+/**
+ * `ClientSDK.query` catches whatever an operation throws and reports it as `data: null` with
+ * an empty error object, so a thrown message never reaches the caller. Return failures as
+ * data instead, and let the tools read `denied`.
+ */
+export interface BrandRequestFailure {
+  denied: true;
+  status: number;
+  message: string;
+}
+
+export function isBrandFailure(value: unknown): value is BrandRequestFailure {
+  return typeof value === 'object' && value !== null && 'denied' in value;
+}
+
+async function get<T>(path: string): Promise<T | BrandRequestFailure> {
   const response = await proxiedFetch(path);
 
   if (response.status === 401 || response.status === 403) {
-    throw new Error(
-      `Brand request denied (${response.status}). The Marketplace app registration lacks the brand read scope.`
-    );
+    return {
+      denied: true,
+      status: response.status,
+      message: `Brand read denied (${response.status}). The Marketplace app registration has the brand review scope but not brand read, which is a separate grant.`,
+    };
   }
   if (response.status === 404) {
     throw new Error(`Brand request returned 404 for ${path}.`);

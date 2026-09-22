@@ -17,11 +17,9 @@ export const MINIMAL_TOOLS = [
   'loadSkill',
   'getCurrentPageContext',
   'getCurrentSiteContext',
-  // Brand: review is a first-party SDK operation; the two readers come from the local
-  // brand module in lib/sdk, which registers the Agent API endpoints the SDK omits.
+  // Brand review is the only brand capability granted to this app. The readers exist but
+  // return 401, so they are kept out of the default set to avoid a wasted call.
   'generateBrandReview',
-  'readBrandKit',
-  'readBrandContext',
 ] as const;
 
 /**

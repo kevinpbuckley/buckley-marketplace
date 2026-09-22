@@ -20,6 +20,16 @@ common mistake here.
 The brand kit is the **rulebook** — prescriptive, per site. The brand context is the
 **briefing** — long-form narrative about the business, per organization.
 
+## Read access is currently denied
+
+Verified against this tenant: `readBrandKit` and `readBrandContext` return **401**. The app
+registration has the brand **review** scope, which is a separate grant from brand **read**, and
+read is not currently available to request.
+
+So for any question about what the guidelines *say*, go straight to `generateBrandReview` over
+real copy — do not call the readers first and do not retry them. The tools remain in place for
+when the read scope is granted, and they report the denial plainly if called.
+
 ## Which one answers the question
 
 - Tone of voice, visual rules, allowed wording, glossary → **brand kit**

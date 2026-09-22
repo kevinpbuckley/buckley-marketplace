@@ -7,6 +7,16 @@ import type {
   BrandContextNode,
   BrandContextSummary,
 } from '../sdk/brand-module';
+import { isBrandFailure } from '../sdk/brand-module';
+
+/** ClientSDK wraps the module result in `data`; some Agent API payloads wrap again. */
+function unwrap<T>(payload: unknown): T | undefined {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    const inner = (payload as { data?: unknown }).data;
+    if (inner !== undefined && inner !== null) return inner as T;
+  }
+  return payload as T | undefined;
+}
 
 const inputSchema = z.object({
   brandContextId: z
@@ -50,7 +60,9 @@ export const execute: ToolExecutor = async (input, context) => {
   try {
     if (!brandContextId) {
       const response = await context.client.query('brand.contexts.list');
-      const contexts = (response.data ?? []) as BrandContextSummary[];
+      const listed = unwrap<BrandContextSummary[] | unknown>(response.data);
+      if (isBrandFailure(listed)) return { success: false, error: listed.message };
+      const contexts = (Array.isArray(listed) ? listed : []) as BrandContextSummary[];
       return {
         success: true,
         output: {
@@ -68,7 +80,8 @@ export const execute: ToolExecutor = async (input, context) => {
     const response = await context.client.query('brand.contexts.getById', {
       params: { path: { brandContextId } },
     });
-    const tree = response.data as BrandContextDetail | undefined;
+    const tree = unwrap<BrandContextDetail>(response.data);
+    if (isBrandFailure(tree)) return { success: false, error: tree.message };
     const documents = flatten(tree?.children).filter((n) => n.type !== 'folder');
 
     if (!document) {
@@ -102,7 +115,13 @@ export const execute: ToolExecutor = async (input, context) => {
         query: { ids: match.brandContextItemId },
       },
     });
-    const entry = (itemsResponse.data as BrandContextItems | undefined)?.data?.[0];
+    // This payload has a `data` array of its own, so only unwrap when the envelope is absent.
+    const raw = itemsResponse.data as unknown;
+    const items =
+      raw && typeof raw === 'object' && 'requested' in raw
+        ? (raw as BrandContextItems)
+        : unwrap<BrandContextItems>(raw);
+    const entry = items?.data?.[0];
 
     if (!entry?.content) {
       return {

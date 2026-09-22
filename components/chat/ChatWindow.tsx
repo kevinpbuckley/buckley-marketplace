@@ -94,11 +94,22 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
           output: result.output,
         });
       } else {
+        // Only errorText reaches the model, so fold in any diagnostic fields the tool
+        // returned alongside `error` — availableSections, hints and the like — rather than
+        // dropping them and leaving it to guess why the call failed.
+        const { error, ...rest } = result as { success: false; error: string } & Record<
+          string,
+          unknown
+        >;
+        const { success: _, ...diagnostics } = rest;
+
         addToolOutput({
           tool: toolCall.toolName,
           toolCallId: toolCall.toolCallId,
           state: 'output-error',
-          errorText: (result as { success: false; error: string }).error,
+          errorText: Object.keys(diagnostics).length
+            ? `${error}\n${JSON.stringify(diagnostics)}`
+            : error,
         });
       }
     },
