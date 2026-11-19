@@ -379,7 +379,7 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
         <div className="flex-1">
           <h2 className="font-semibold text-lg">Buckley</h2>
           <p className="text-sm text-muted-foreground">
-            Manage XM Cloud content using the Agentic API - create, update, analyze, and explore your content
+            Manage SitecoreAI content with the full power of the Marketplace SDK - create, update, analyze, and explore your content
           </p>
           <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
             <span>Session: {sessionTokens.total.toLocaleString()} tokens</span>
@@ -701,7 +701,7 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
             value={input}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about XM Cloud best practices..."
+            placeholder="Ask about SitecoreAI best practices..."
             className="flex-1 resize-none rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring min-h-[44px] max-h-[200px]"
             rows={1}
             disabled={isLoading}

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "XM Cloud Solution Review",
-  description: "AI-powered XM Cloud content management using the Agentic API",
+  title: "Buckley for SitecoreAI",
+  description: "AI-powered SitecoreAI content management with the full power of the Marketplace SDK",
 };
 
 export default function RootLayout({

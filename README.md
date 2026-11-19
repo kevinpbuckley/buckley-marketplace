@@ -1,15 +1,15 @@
-# AgenticAPI Agent
+# Buckley
 
-A sample application demonstrating how to integrate Sitecore Agentic API with Vercel AI SDK in the Sitecore Marketplace, built with Next.js.
+A Sitecore Marketplace app that puts the full power of the Marketplace SDK behind a conversational agent for SitecoreAI, built with Next.js and the Vercel AI SDK.
 
 ## Overview
 
-AgenticAPI Agent is a reference implementation showcasing how to build AI-powered applications using the Sitecore Agentic API alongside the Vercel AI SDK. This sample demonstrates conversational AI capabilities with Azure OpenAI integrated with Sitecore Marketplace SDK tools for interacting with Sitecore XM Cloud content.
+Buckley is a reference implementation showing how to build an AI agent on the Sitecore Marketplace SDK. Instead of one tool per API call, it searches a catalog of every SDK operation (191 as of SDK 0.5), describes the one it needs, and invokes it, with Azure OpenAI running the conversation and the SDK reaching SitecoreAI content.
 
 ## Features
 
 - 🤖 **AI Integration**: Demonstrates Azure OpenAI (GPT-4) integration with Vercel AI SDK
-- 🔍 **Sitecore Agentic API**: Examples of using Agentic API to query content items, templates, and structures
+- 🔍 **Full Marketplace SDK**: Every SDK operation, from the Agent API to Sites, Pages, Authoring and Content Transfer, through one catalog
 - 🛠️ **Marketplace SDK**: Sample integration with Sitecore Marketplace SDK tools
 - 💬 **Interactive Chat**: Conversational interface for natural language interactions
 - 🔐 **Client-Side Tool Calling**: Tool calling is performed client-side, eliminating the need for authentication tokens in environment variables
@@ -19,14 +19,14 @@ AgenticAPI Agent is a reference implementation showcasing how to build AI-powere
 
 - Node.js 18+ 
 - Azure OpenAI account with API access
-- Access to Sitecore Marketplace and Agentic API services
+- Access to the Sitecore Marketplace and a SitecoreAI environment
 
 ## Getting Started
 
 ### 1. Clone and Install
 
 ```bash
-cd AgenticAPI_Agent
+cd buckley-marketplace
 npm install
 ```
 
@@ -68,7 +68,7 @@ npm start
 ## Project Structure
 
 ```
-AgenticAPI_Agent/
+buckley-marketplace/
 ├── app/              # Next.js app router pages and API routes
 ├── components/       # React UI components (shadcn/ui)
 ├── docs/            # Documentation and design documents
@@ -82,7 +82,7 @@ AgenticAPI_Agent/
 - **Framework**: [Next.js 16](https://nextjs.org/) with Turbopack
 - **AI SDK**: [Vercel AI SDK](https://sdk.vercel.ai/)
 - **AI Provider**: [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
-- **Sitecore**: [@sitecore-marketplace-sdk](https://www.npmjs.com/org/sitecore-marketplace-sdk) + Agentic API
+- **Sitecore**: [@sitecore-marketplace-sdk](https://www.npmjs.com/org/sitecore-marketplace-sdk) (client, xmc, ai)
 - **UI Components**: [Radix UI](https://www.radix-ui.com/) + [shadcn/ui](https://ui.shadcn.com/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **Language**: TypeScript
@@ -102,7 +102,7 @@ See the [docs](./docs) folder for additional documentation:
 
 ## Sample Application
 
-This is a sample implementation for educational and reference purposes. It demonstrates patterns and practices for building AI-powered applications with Sitecore Agentic API and Vercel AI SDK in the Sitecore Marketplace ecosystem.
+This is a sample implementation for educational and reference purposes. It demonstrates patterns and practices for building AI-powered applications with the Sitecore Marketplace SDK and Vercel AI SDK for SitecoreAI.
 
 ## Security Notes
 

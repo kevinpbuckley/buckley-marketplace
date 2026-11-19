@@ -1,6 +1,6 @@
 {
   "name": "Buckley",
-  "description": "Buckley — Sitecore XM Cloud agent",
+  "description": "Buckley — SitecoreAI agent powered by the Marketplace SDK",
   "systemPromptFile": "./system-prompt.md",
   "tools": [
     "invokeOperation",
