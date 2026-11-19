@@ -16,7 +16,7 @@ const inputSchema = z.object({
 export const definition: ToolDefinition = {
   name: 'generateBrandReview',
   description:
-    'Review content against the site brand kit and return compliance scores, explanations and fix suggestions. Requires a brandKitId from getSiteContext. Report the findings — do not apply the fixes without asking.',
+    'Review content against the site brand kit and return compliance scores, explanations and fix suggestions. Requires a brandKitId: read it with invokeOperation on the site.context query, or from the brand_information field of xmc.agent.sitesGetSiteDetails. Report the findings — do not apply the fixes without asking.',
   category: 'Brand',
   inputSchema,
   examples: [
@@ -59,6 +59,8 @@ export const execute: ToolExecutor = async (input, context) => {
         },
         query: { sitecoreContextId: context.contextId },
       },
+      // An LLM review of the whole input; the 30 s bridge default is too tight for long copy.
+      timeoutMs: 120_000,
     });
 
     return { success: true, output: response.data ?? null };

@@ -1,13 +1,12 @@
 ---
 name: Brand kit and brand context
-description: The two brand sources — structured rules in the brand kit, narrative knowledge in the brand context — which to read for a given question, and the JSON each returns.
+description: The two brand sources — structured rules in the brand kit, narrative knowledge in the brand context — what each holds, and why the guidelines can only be reached through a brand review.
 when_to_use: Any question about brand — tone of voice, messaging, audiences, positioning, visual rules, glossary, proof points, or whether some copy is on-brand.
 ---
 
 # Brand kit and brand context
 
-Sitecore holds brand information in two separate places. Picking the wrong one is the most
-common mistake here.
+Sitecore holds brand information in two separate places.
 
 | | **Brand kit** | **Brand context** |
 |---|---|---|
@@ -15,69 +14,29 @@ common mistake here.
 | Shape | sections → fields | folders → documents |
 | Typical content | Tone of Voice, Visual Guidelines, Image Style, Glossary, Dos and Don'ts, Grammar Guidelines | Audiences, Messaging, Product, Content Guidelines, Customer Evidence |
 | Attached to | a **site** | the **organization** |
-| Tool | `readBrandKit` | `readBrandContext` |
 
 The brand kit is the **rulebook** — prescriptive, per site. The brand context is the
 **briefing** — long-form narrative about the business, per organization.
 
-## Read access is currently denied
+## You cannot read either one directly
 
-Verified against this tenant: `readBrandKit` and `readBrandContext` return **401**. The app
-registration has the brand **review** scope, which is a separate grant from brand **read**, and
-read is not currently available to request.
+The Agent API has brand kit and brand context read endpoints, but they are not in the
+Marketplace SDK (xmc 0.5.0), so they are not in the operation catalog. They also need a brand
+**read** scope this app does not have; it has the brand **review** scope only. Do not search
+the catalog for them — there is nothing to find.
 
-So for any question about what the guidelines *say*, go straight to `generateBrandReview` over
-real copy — do not call the readers first and do not retry them. The tools remain in place for
-when the read scope is granted, and they report the denial plainly if called.
+## What to do instead
 
-## Which one answers the question
-
-- Tone of voice, visual rules, allowed wording, glossary → **brand kit**
-- Audiences, personas, positioning, value propositions, proof points, competitors → **brand context**
-- "Is this copy on-brand?" → `generateBrandReview`, which scores it against the kit
-- "Tell me about the brand" → list both, then read only what the question needs
-
-## Brand kit
-
-1. `readBrandKit` with `brandKitId` returns the kit summary and its section names.
-2. `readBrandKit` again with `section` returns that section's fields.
-
-Get the id from `xmc.agent.sitesGetSiteDetails`, whose `brand_information` field holds **only
-the id** — never the guidance. Do not present that id as brand content. Omit `brandKitId` to
-list every kit in the organization.
-
-A section's fields come back as:
-
-```json
-{ "section": "Tone of Voice",
-  "fields": [ { "name": "Tone of voice", "type": "text", "value": "…", "intent": "…" },
-              { "name": "Tone scenarios", "type": "…", "value": [ … ] } ] }
-```
-
-`value` holds the content. It is a string for `text` fields but can be an **array of objects**
-for structured fields such as tone scenarios or colour palettes — read it rather than assuming
-a string, and summarise the entries instead of dumping raw JSON.
-
-## Brand context
-
-1. `readBrandContext` with `brandContextId` returns every document as a `Folder / Document`
-   path, e.g. `Messaging / Messaging Framework`.
-2. `readBrandContext` again with `document` returns that document's markdown.
-
-Omit `brandContextId` to list the organization's contexts. `runStatus` should be `completed`;
-anything else means it is still being built and may be incomplete.
-
-## If a read is denied
-
-These endpoints are part of the Agent API but absent from the published SDK, so they are
-registered by a local module in this app. A 401 or 403 means the Marketplace app registration
-lacks the brand read scope — the app has the brand **review** scope, which is separate.
-
-When that happens: say the guidelines cannot be read, then offer `generateBrandReview` over
-real copy instead. Its findings name the rules they come from and usually answer the
-underlying question. Do not retry, and do not search for another operation — there isn't one.
+- "Is this copy on-brand?", "Review this page's tone" → `generateBrandReview` over the real
+  copy. Follow the Brand compliance review skill.
+- "What do our guidelines say about X?" → say the guidelines cannot be read here, then offer a
+  brand review of real copy that touches X. Its findings name the rules they come from and
+  usually answer the underlying question.
+- The brand kit **id** is available: `query site.context` returns `brandKitId`, and
+  `xmc.agent.sitesGetSiteDetails` has it in `brand_information`. That field holds **only the
+  id** — never the guidance. Do not present the id as brand content.
 
 ## Rules
 
 - **Never infer brand guidance.** Not from the brand name, the industry, or the page copy.
-- Read the documents the question needs. The tree can hold 18 or more, and they are long.
+- Do not retry a brand review that was denied (401/403); report it and stop.

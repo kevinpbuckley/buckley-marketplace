@@ -13,9 +13,11 @@ This is a **Next.js + Vercel AI SDK** application that provides an AI agent inte
 
 ## Tool System Architecture
 
-**Critical Pattern**: Tools are defined in individual files under `lib/tools/` and registered in `lib/tools/index.ts`.
+**Critical Pattern**: Buckley has one fixed toolset of 7 tools. Every Sitecore operation is reached through the operation catalog (`lib/catalog/catalog.json`, generated from the installed SDK by `npm run catalog:generate`): `searchOperations` → `describeOperation` → `invokeOperation`, with task knowledge in `lib/skills/*.md` via `loadSkill`. The other three tools cover what the catalog cannot: `getCurrentPageContext`, `getCurrentSiteContext` (Pages-editor context) and `generateBrandReview`.
 
-### Adding a New Tool (4 steps):
+**Do not add a dedicated tool for something an SDK operation already does** — add or extend a skill instead. Add a tool only when the catalog cannot express the capability.
+
+### Adding a New Tool (only when the catalog cannot do it):
 1. **Create** `lib/tools/myTool.ts` exporting: `definition`, `aiTool`, `execute`
 2. **Import** at top of `lib/tools/index.ts`
 3. **Register** in `toolRegistry` Map
@@ -69,7 +71,7 @@ When running inside Sitecore Pages editor, `pagesContext` provides:
 - `pageInfo.id` - Current page item ID
 - `siteInfo.id` - Current site root ID
 - Use `getCurrentPageContext` tool to access this in conversations
-- Use `refreshPageView` (mutation: `pages.reloadCanvas`) after content updates
+- Invoke `mutation pages.reloadCanvas` after content updates
 
 ## Development Workflow
 
@@ -80,7 +82,7 @@ npm run dev  # Starts on https://localhost:3000 with self-signed cert
 **Why HTTPS?** Sitecore Marketplace requires secure context for SDK initialization.
 
 ### Key Files to Update Together
-1. **New tool**: `lib/tools/myTool.ts` → `lib/tools/index.ts` → `lib/agents/agent.json`
+1. **New capability**: a skill in `lib/skills/` naming the catalog operations; a tool (`lib/tools/myTool.ts` → `lib/tools/index.ts` → `lib/agents/agent.json`) only if the catalog cannot do it
 2. **Agent behavior**: `lib/agents/system-prompt.md` (markdown instructions for LLM)
 3. **UI components**: Use shadcn/ui components from `components/ui/`
 
@@ -136,7 +138,7 @@ try {
 
 **Why modular tool registry?**
 - Each tool is independently testable
-- Easy to enable/disable tools per agent
+- Kept small on purpose: tool definitions are billed on every request
 - Clear separation: definition (AI guidance) + execution (business logic)
 
 **Why separate agent.json + system-prompt.md?**

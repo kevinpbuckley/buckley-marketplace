@@ -28,6 +28,23 @@ Work through those in order rather than guessing.
 `xmc.agent.pagesGetPage` returns a page's current workflow state and the commands available
 to the author. `xmc.sites.retrieveWorkflowStatistics` gives counts per state for a whole site.
 
+To explain a workflow itself — its states, commands and which state is final — read its
+definition items with `mutation xmc.authoring.graphql` (params
+`{ body: { query, variables } }`). Workflows live under `/sitecore/system/Workflows`; each
+workflow's children are its states, and each state's children are its commands:
+
+```graphql
+query ($path: String!) {
+  item(where: { path: $path, database: "master" }) {
+    children { nodes { itemId name path template { name }
+      children { nodes { itemId name template { name } fields { nodes { name value } } } } } }
+  }
+}
+```
+
+A state's `Final` field is `1` when it is publishable; a command's `Next state` field holds the
+target state's id.
+
 **You cannot execute a workflow transition.** No SDK operation performs one — the Agent API
 exposes workflow as read-only. Say so plainly and point the user at the Workbox; do not
 attempt a mutation for it.

@@ -16,8 +16,8 @@ import type { ChatMessageMetadata, ChatUIMessage } from '@/app/api/chat/route';
 
 type ToolSummary = { name: string; description: string; category: string };
 
-// The registry holds every tool so any of them can be executed; which ones the model is
-// actually offered depends on the server's tool mode, so the panel asks the server.
+// The client registry only knows the client-side tools; the panel asks the server for the full
+// list, which adds the server-side catalog and skill tools.
 const REGISTERED_TOOLS: ToolSummary[] = getToolDefinitions().map(def => ({
   name: def.name,
   description: def.description,
@@ -117,7 +117,6 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
   
   const [input, setInput] = useState('');
   const [activeTools, setActiveTools] = useState<ToolSummary[]>(REGISTERED_TOOLS);
-  const [toolMode, setToolMode] = useState<string | null>(null);
   const [showTools, setShowTools] = useState(false);
   const [showTokenStats, setShowTokenStats] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -126,9 +125,8 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
   useEffect(() => {
     fetch('/api/tools')
       .then((res) => res.json())
-      .then((data: { mode: string; tools: ToolSummary[] }) => {
+      .then((data: { tools: ToolSummary[] }) => {
         if (Array.isArray(data.tools)) setActiveTools(data.tools);
-        setToolMode(data.mode ?? null);
       })
       .catch(() => {
         // Keep the registry listing rather than showing nothing.
@@ -476,12 +474,6 @@ export function ChatWindow({ samplePrompts = [] }: ChatWindowProps) {
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-medium text-sm">
               Available Tools ({activeTools.length})
-              {toolMode && (
-                <span className="text-muted-foreground font-normal">
-                  {' '}— {toolMode} mode
-                  {toolMode !== 'full' && `, ${REGISTERED_TOOLS.length} registered`}
-                </span>
-              )}
             </h3>
             <button 
               onClick={() => setShowTools(false)}

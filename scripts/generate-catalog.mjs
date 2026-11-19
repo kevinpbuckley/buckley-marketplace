@@ -51,9 +51,44 @@ function indexTypes(source) {
   return types;
 }
 
+const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * Since @hey-api/openapi-ts 0.99 (xmc 0.4.4 / ai 0.1.3) every property gets its OpenAPI
+ * `title` as a doc line, which for these specs is just the field name re-cased (`pageId` ->
+ * "Pageid", `x-sc-job-id` -> "X-Sc-Job-Id"). It tells the model nothing and costs tokens on
+ * every describeOperation, so drop a leading doc line that only restates the property name and
+ * keep any real description after it.
+ */
+function dropTitleEcho(block) {
+  const lines = block.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim() !== '/**') {
+      out.push(lines[i]);
+      continue;
+    }
+    let end = i + 1;
+    while (end < lines.length && lines[end].trim() !== '*/') end++;
+    const prop = lines[end + 1]?.match(/^\s*'?([\w$-]+)'?\??:/)?.[1];
+    const text = lines.slice(i + 1, end).map((l) => l.trim().replace(/^\*\s?/, ''));
+
+    if (prop && text.length && normalize(text[0]) === normalize(prop)) {
+      text.shift();
+      while (text.length && !text[0].trim()) text.shift();
+    }
+    if (text.length) {
+      const indent = lines[i].match(/^\s*/)[0];
+      out.push(lines[i], ...text.map((t) => `${indent} *${t ? ' ' + t : ''}`), lines[end]);
+    }
+    i = end;
+  }
+  return out.join('\n');
+}
+
 /** Trims generated-code indentation so stored params stay compact. */
 function tidy(block) {
-  const lines = block.split('\n');
+  const lines = dropTitleEcho(block).split('\n');
   const indents = lines
     .slice(1)
     .filter((l) => l.trim())

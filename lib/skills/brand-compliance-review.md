@@ -20,17 +20,11 @@ and fix suggestions. It needs a brand kit id, which comes from the host, not fro
 2. **Get the content to review.** `xmc.agent.pagesGetPageHtml` for the rendered page, or
    `xmc.agent.contentGetContentItemById` when the user cares about specific fields.
 
-3. **Run the review.** `invokeOperation` with:
-   - key `ai.skills.generateBrandReview`
-   - kind `mutation`
-   - params `{ body: { brandkitId, input: { headline: "...", body: "..." } } }`
-
-   Two things to get right:
-   - The body spells it **`brandkitId`**, lowercase `k`, while the host context field is
-     `brandKitId`. Same value, different casing.
-   - `input` is a flat map of named fields whose values are strings, numbers or booleans.
-   - `sections` is optional and takes `{ sectionId, fieldIds? }` objects, not plain strings.
-     Omit it to review against the whole brand kit.
+3. **Run the review** with the `generateBrandReview` tool: `brandKitId` plus `input`, a flat
+   map of named fields whose values are strings, numbers or booleans, e.g.
+   `{ headline: "...", body: "..." }`. Use the tool rather than `invokeOperation` on
+   `ai.skills.generateBrandReview`: it handles the API's `brandkitId` spelling and allows the
+   review two minutes instead of the default 30 seconds.
 
 4. **Report.** Lead with the score, then each violation with the offending copy quoted and
    the suggested fix beside it.

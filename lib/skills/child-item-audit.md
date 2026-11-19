@@ -20,6 +20,14 @@ and editor get slow for authors.
    returns data for many pages in one call — far cheaper than one request per node. Get the
    candidate ids from `xmc.agent.sitesGetAllPagesBySite` first.
 
+   For a deep scan in one call, use `mutation xmc.authoring.graphql` with params
+   `{ body: { query } }` and nest `children { nodes { itemId name path template { name } } }`
+   four levels deep under `item(where: { database: "master", itemId: "<root>" })`, then count
+   the nodes at each level. Two rules: the item id **must** be a GUID with hyphens, and the
+   authoring endpoint caps query depth at 13, so four levels of children is the most one query
+   can take. Go deeper with a second query rooted at the deepest large node. Get the root item
+   id from `query xmc.agent.sitesGetSiteDetails`.
+
 3. **Report offenders.** Path, child count, and how far over the limit. Worst first.
 
 4. **Recommend a fix.** Usually bucketing, or folder items grouped by a meaningful axis —
