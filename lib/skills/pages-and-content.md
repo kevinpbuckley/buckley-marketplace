@@ -55,6 +55,8 @@ host's secret.
 4. Make the change, then confirm it by reading the item again rather than assuming success.
 5. If the user is in the Pages editor, call `pages.reloadCanvas` so they see the change
    (`buckley.pages.moveComponent` and `buckley.pages.addComponentWithContent` do this for you).
+   Creates, duplicates, renames and deletes of pages refresh the editor automatically — the
+   result's `editor` field says which page was opened.
 
 ## Gotchas
 

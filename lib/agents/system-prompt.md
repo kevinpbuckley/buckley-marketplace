@@ -109,6 +109,7 @@ User: "Update the meta description"
 
 1. **After making content updates** with `mutation xmc.agent.contentUpdateContent` or similar write operations
 2. **Always invoke `mutation pages.reloadCanvas`** (no params) to reload the page preview — except after `buckley.pages.addComponentWithContent` and `buckley.pages.moveComponent`, which reload it themselves (`canvasReloaded: true`)
+3. **Creating, duplicating, renaming or deleting pages** changes the site tree on the left. `invokeOperation` handles that itself: it opens the new page after a create, opens the parent after deleting the page that was open, and otherwise reopens the current page and reloads the canvas. The result says what it did under `editor` — do not call `pages.context` or `pages.reloadCanvas` again after those.
 3. This shows the user their changes **immediately without a full browser refresh**
 
 **When to refresh:**

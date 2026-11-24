@@ -30,7 +30,7 @@ function copy(from, to, extraReplace = (s) => s) {
   writeFileSync(join(WORK, to), extraReplace(src));
 }
 for (const name of ['operation-client', 'types', 'invokeOperation']) copy(`tools/${name}.ts`, `tools/${name}.mts`);
-for (const name of ['index', 'types', 'layout', 'moveComponent', 'addComponentWithContent']) {
+for (const name of ['index', 'types', 'layout', 'moveComponent', 'addComponentWithContent', 'editor-refresh']) {
   copy(`operations/${name}.ts`, `operations/${name}.mts`);
 }
 copy('compact-history.ts', 'compact-history.mts');
@@ -55,7 +55,7 @@ function unwrap(out) {
 
 const r = (instanceId, placeholderKey, dataSource) => ({ id: `rend-${instanceId}`, instanceId, placeholderKey, dataSource });
 
-function fakeClient({ renderings, components = [], addFailures = 0 }) {
+function fakeClient({ renderings = [], components = [], addFailures = 0, parentId = 'home' }) {
   const calls = [];
   const layout = { devices: [{ id: 'dev', layoutId: 'lay', placeholders: [], renderings }] };
   let failuresLeft = addFailures;
@@ -69,6 +69,8 @@ function fakeClient({ renderings, components = [], addFailures = 0 }) {
         return ok({ revision: 'rev-1', layoutEditingKind: 'Final', finalLayout: JSON.stringify(layout) });
       if (key === 'xmc.agent.pagesGetComponentsOnPage') return ok({ components });
       if (key === 'xmc.agent.contentGetContentItemById') return ok({ fields: { SubCopy: { value: '<p>Hello</p>' }, Other: '' } });
+      if (key === 'xmc.pages.retrievePage')
+        return parentId ? ok({ id: options.params.path.pageId, parentId }) : { data: { data: undefined, error: { detail: 'not found' }, response: { status: 404 } } };
       throw new Error(`unexpected query ${key}`);
     },
     async mutate(key, options) {
@@ -77,7 +79,11 @@ function fakeClient({ renderings, components = [], addFailures = 0 }) {
         layout.devices = JSON.parse(options.params.body.layout.body).devices;
         return { data: { savedPage: { id: 'page' } } };
       }
-      if (key === 'pages.reloadCanvas') return undefined;
+      if (key === 'pages.reloadCanvas' || key === 'pages.context') return undefined;
+      if (key === 'xmc.agent.contentDeleteContent') return { data: { success: true, deletedId: options.params.path.itemId } };
+      if (key === 'xmc.pages.deletePage') return { data: true };
+      if (key === 'xmc.agent.pagesCreatePage') return { data: { itemId: 'new-page', name: 'New' } };
+      if (key === 'xmc.pages.renamePage') return { data: { pageId: options.params.path.pageId, name: 'Renamed' } };
       if (key === 'xmc.agent.pagesAddComponentOnPage') {
         if (failuresLeft-- > 0)
           return { data: undefined, error: { detail: 'Item name already exists' }, response: { status: 400 } };
@@ -194,6 +200,51 @@ await test('invokeOperation rejects bad params and the wrong kind without callin
   const wrongKind = await invoke({ key: 'buckley.pages.moveComponent', kind: 'query', params: {} }, ctx);
   assert.match(wrongKind.error, /is a mutation/);
   assert.equal(client.calls.length, 0);
+});
+
+const editorCtx = (client, pageId = 'open-page') => ({
+  client,
+  contextId: 'ctx',
+  pagesContext: { pageInfo: { id: pageId, language: 'en' }, siteInfo: { name: 'solterra' } },
+});
+const hostCalls = (client) => client.calls.filter((c) => c.key.startsWith('pages.')).map((c) => `${c.key} ${c.params?.itemId ?? ''}`.trim());
+
+await test('deleting the open page opens its parent, looked up before the delete', async () => {
+  const client = fakeClient({ parentId: 'home' });
+  const out = await invoke({ key: 'xmc.agent.contentDeleteContent', kind: 'mutation', params: { path: { itemId: '{OPEN-PAGE}' } } }, editorCtx(client));
+  assert.equal(out.output.editor.openedPageId, 'home');
+  assert.deepEqual(client.calls.map((c) => c.key).slice(0, 2), ['xmc.pages.retrievePage', 'xmc.agent.contentDeleteContent']);
+  assert.deepEqual(hostCalls(client), ['pages.context home']);
+});
+
+await test('deleting the open page without a findable parent navigates nowhere', async () => {
+  const client = fakeClient({ parentId: null });
+  const out = await invoke({ key: 'xmc.pages.deletePage', kind: 'mutation', params: { path: { pageId: 'open-page' } } }, editorCtx(client));
+  assert.equal(out.output.editor.openedPageId, null);
+  assert.deepEqual(hostCalls(client), []);
+});
+
+await test('creating a page opens it; renaming or deleting another page reopens the current one', async () => {
+  const created = fakeClient({});
+  const out = await invoke({ key: 'xmc.agent.pagesCreatePage', kind: 'mutation', params: { body: { name: 'New' } } }, editorCtx(created));
+  assert.equal(out.output.editor.openedPageId, 'new-page');
+  assert.deepEqual(hostCalls(created), ['pages.context new-page']);
+
+  const renamed = fakeClient({});
+  await invoke({ key: 'xmc.pages.renamePage', kind: 'mutation', params: { path: { pageId: 'other' }, body: { newName: 'x' } } }, editorCtx(renamed));
+  assert.deepEqual(hostCalls(renamed), ['pages.context open-page', 'pages.reloadCanvas']);
+
+  const deletedOther = fakeClient({});
+  await invoke({ key: 'xmc.agent.contentDeleteContent', kind: 'mutation', params: { path: { itemId: 'other' } } }, editorCtx(deletedOther));
+  assert.equal(deletedOther.calls.some((c) => c.key === 'xmc.pages.retrievePage'), false);
+  assert.deepEqual(hostCalls(deletedOther), ['pages.context open-page', 'pages.reloadCanvas']);
+});
+
+await test('outside the Pages editor nothing is refreshed', async () => {
+  const client = fakeClient({});
+  const out = await invoke({ key: 'xmc.agent.pagesCreatePage', kind: 'mutation', params: { body: {} } }, { client, contextId: 'ctx' });
+  assert.equal(out.output.editor, undefined);
+  assert.deepEqual(hostCalls(client), []);
 });
 
 await test('compactHistory shortens earlier tool results only', async () => {

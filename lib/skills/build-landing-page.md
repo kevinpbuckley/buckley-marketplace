@@ -83,6 +83,7 @@ that the layout does not render.
 
 - Read `warnings` from each `buckley.pages.addComponentWithContent` result. An existing
   component with empty content is reported there — ask the user whether to fill or remove it.
-- The canvas reloads automatically when the page is open in the Pages editor. To open the new
-  page there, invoke `mutation pages.context` with `{ itemId: pageId, language }`.
+- The canvas reloads automatically when the page is open in the Pages editor, and creating the
+  page opens it in the editor (the create result's `editor` field says so). To open a page
+  yourself, invoke `mutation pages.context` with `{ itemId: pageId, language }`.
 - Never paste a preview URL into chat: it contains the editing host's secret.
