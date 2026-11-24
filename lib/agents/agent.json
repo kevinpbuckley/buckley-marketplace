@@ -5,8 +5,6 @@
   "tools": [
     "invokeOperation",
     "invokeQueries",
-    "moveComponent",
-    "addComponentWithContent",
     "getCurrentPageContext",
     "getCurrentSiteContext",
     "generateBrandReview"

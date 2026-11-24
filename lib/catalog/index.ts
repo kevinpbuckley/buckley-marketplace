@@ -51,7 +51,95 @@ function withHostBridgeDocs(op: CatalogOperation): CatalogOperation {
   return docs && !op.summary && !op.params ? { ...op, ...docs } : op;
 }
 
-const operations = (catalog.operations as CatalogOperation[]).map(withHostBridgeDocs);
+const LOCAL_SHAPE_NOTE = 'Params are passed directly, not under path/query/body.';
+
+/**
+ * Buckley's own composite operations (lib/operations). They are invoked through invokeOperation
+ * like SDK operations, so they are catalogued the same way; the generator does not see them.
+ */
+const LOCAL_OPERATIONS: CatalogOperation[] = [
+  {
+    key: 'buckley.pages.moveComponent',
+    namespace: 'buckley.pages',
+    kind: 'mutation',
+    package: 'buckley',
+    deprecated: false,
+    summary: `Reorder a component on a page, or move it to another placeholder, in one call: reads the layout, moves the component, saves it with xmc.pages.saveLayout and reloads the Pages canvas when that page is open. Use this instead of calling xmc.pages.saveLayout yourself. ${LOCAL_SHAPE_NOTE}`,
+    operation: null,
+    params: `{
+    pageId: string;
+    /** Site name, e.g. "solterra" */
+    site: string;
+    /** Page language, e.g. "en" */
+    language: string;
+    /** The component to move: its \`id\` from xmc.agent.pagesGetComponentsOnPage */
+    instanceId: string;
+    position: 'first' | 'last' | 'before' | 'after';
+    /** Required for before/after: instance id of the neighbouring component */
+    relativeTo?: string;
+    /** Only when moving to another placeholder, e.g. "headless-main" */
+    placeholder?: string;
+}`,
+    responseType: 'MoveComponentResult',
+    response: `{
+    placeholder: string;
+    /** New order of the placeholder */
+    order: Array<{ instanceId: string; renderingId: string; dataSource?: string }>;
+    warnings?: Array<string>;
+    canvasReloaded: boolean;
+}`,
+    aliases: ['reorder', 'position', 'layout'],
+  },
+  {
+    key: 'buckley.pages.addComponentWithContent',
+    namespace: 'buckley.pages',
+    kind: 'mutation',
+    package: 'buckley',
+    deprecated: false,
+    summary: `Add a component to a page with its datasource content in one call: picks a unique datasource name, creates the datasource with the field values, reads it back to check they were stored, optionally positions the component, warns about existing components on the page with empty datasources, and reloads the Pages canvas when that page is open. Check the placeholder allows the component first (xmc.agent.pagesGetAllowedComponentsByPlaceholder). ${LOCAL_SHAPE_NOTE}`,
+    operation: null,
+    params: `{
+    pageId: string;
+    /** Page language, e.g. "en" */
+    language: string;
+    /** Rendering id, from xmc.agent.pagesGetAllowedComponentsByPlaceholder */
+    componentRenderingId: string;
+    /** e.g. "headless-main" */
+    placeholderPath: string;
+    /** Datasource item name; a suffix is added if it is taken */
+    componentItemName: string;
+    /** Values by exact field name, from datasourceFields of xmc.agent.componentsGetComponent. Rich text as clean HTML, other fields plain text. */
+    fields: { [fieldName: string]: string };
+    /** Omit to append at the end of the placeholder */
+    position?: 'first' | 'last' | 'before' | 'after';
+    /** Required for before/after: instance id of the neighbouring component */
+    relativeTo?: string;
+    /** Site name; required when position is first, before or after */
+    site?: string;
+}`,
+    responseType: 'AddComponentWithContentResult',
+    response: `{
+    componentId: string;
+    datasourceId: string | null;
+    /** The datasource name actually used */
+    componentItemName: string;
+    placeholder: string;
+    /** True when every field you set was read back non-empty */
+    contentVerified: boolean;
+    verificationError?: string;
+    /** New order of the placeholder, when positioned */
+    order?: Array<{ instanceId: string; renderingId: string; dataSource?: string }>;
+    /** Empty fields, empty existing components, or a failed move. Act on these. */
+    warnings?: Array<string>;
+    canvasReloaded: boolean;
+}`,
+    aliases: ['datasource', 'content', 'insert'],
+  },
+];
+
+const operations = [...(catalog.operations as CatalogOperation[]).map(withHostBridgeDocs), ...LOCAL_OPERATIONS].sort(
+  (a, b) => a.key.localeCompare(b.key)
+);
 
 export const catalogMeta = {
   count: operations.length,

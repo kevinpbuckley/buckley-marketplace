@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { tool } from 'ai';
 import type { ToolDefinition, ToolExecutor } from './types';
 import { callOperation, capLongStrings, describeFailure } from './operation-client';
+import { isLocalOperation } from '../operations';
 
 const MAX_QUERIES = 10;
 
@@ -45,6 +46,9 @@ export const execute: ToolExecutor = async (input, context) => {
   // Always `client.query`: a mutation key sent here fails rather than writing anything.
   const results = await Promise.all(
     queries.map(async ({ key, params }) => {
+      if (isLocalOperation(key)) {
+        return { key, success: false, error: `${key} writes; run it with invokeOperation.` };
+      }
       const result = await callOperation(context, key, 'query', params);
       return result.ok === true
         ? { key, success: true, result: capLongStrings(result.data) }

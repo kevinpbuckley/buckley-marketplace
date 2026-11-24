@@ -36,7 +36,7 @@ is no single-field operation.
 | Add a language version | `xmc.agent.pagesAddLanguageToPage` | mutation |
 | New page version | `xmc.pages.addPageVersion` | mutation |
 | Rename / duplicate | `xmc.pages.renamePage` / `duplicatePage` | mutation |
-| Reorder or move components | `moveComponent` tool — not `xmc.pages.saveLayout` | — |
+| Reorder or move components | `buckley.pages.moveComponent` — not `xmc.pages.saveLayout` | mutation |
 | Save fields | `xmc.pages.saveFields` | mutation |
 | Translate a page / whole site | `xmc.pages.translatePage` / `xmc.sites.translateSite` | mutation |
 
@@ -54,7 +54,7 @@ host's secret.
 3. For a risky edit, create a version first (`xmc.pages.addPageVersion`) so there is a way back.
 4. Make the change, then confirm it by reading the item again rather than assuming success.
 5. If the user is in the Pages editor, call `pages.reloadCanvas` so they see the change
-   (`moveComponent` and `addComponentWithContent` do this for you).
+   (`buckley.pages.moveComponent` and `buckley.pages.addComponentWithContent` do this for you).
 
 ## Gotchas
 

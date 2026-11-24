@@ -1,9 +1,11 @@
 /**
- * Regression test for the composite tools and history compaction, run against a fake SDK client.
+ * Regression test for Buckley's composite operations and history compaction, run against a
+ * fake SDK client.
  *
- * moveComponent and addComponentWithContent replace multi-step chains the agent used to get
- * wrong, above all the xmc.pages.saveLayout body (the layout goes in as a JSON string under
- * body.layout.body, with the page revision), which took five attempts by hand.
+ * buckley.pages.moveComponent and buckley.pages.addComponentWithContent replace multi-step
+ * chains the agent used to get wrong, above all the xmc.pages.saveLayout body (the layout goes
+ * in as a JSON string under body.layout.body, with the page revision), which took five
+ * attempts by hand. They are exercised through invokeOperation, the way the agent calls them.
  *
  * Run: npm run tools:test
  */
@@ -20,23 +22,36 @@ mkdirSync(WORK, { recursive: true });
 process.on('exit', () => rmSync(WORK, { recursive: true, force: true }));
 
 // Node's ESM loader needs explicit extensions; the app relies on the bundler for them.
-for (const name of ['operation-client', 'layout', 'moveComponent', 'addComponentWithContent', 'types']) {
-  const src = readFileSync(join(ROOT, 'lib', 'tools', `${name}.ts`), 'utf8').replace(
-    /from '\.\/([\w-]+)'/g,
-    "from './$1.mts'"
-  );
-  writeFileSync(join(WORK, `${name}.mts`), src);
+function copy(from, to, extraReplace = (s) => s) {
+  const src = readFileSync(join(ROOT, 'lib', from), 'utf8')
+    .replace(/^import 'server-only';$/m, '')
+    .replace(/from '(\.\.?\/[\w/-]+)'/g, (_, path) => `from '${path === '../operations' ? '../operations/index' : path}.mts'`);
+  mkdirSync(dirname(join(WORK, to)), { recursive: true });
+  writeFileSync(join(WORK, to), extraReplace(src));
 }
-writeFileSync(
-  join(WORK, 'compact-history.mts'),
-  readFileSync(join(ROOT, 'lib', 'compact-history.ts'), 'utf8').replace(/^import 'server-only';$/m, '')
+for (const name of ['operation-client', 'types', 'invokeOperation']) copy(`tools/${name}.ts`, `tools/${name}.mts`);
+for (const name of ['index', 'types', 'layout', 'moveComponent', 'addComponentWithContent']) {
+  copy(`operations/${name}.ts`, `operations/${name}.mts`);
+}
+copy('compact-history.ts', 'compact-history.mts');
+copy('catalog/index.ts', 'catalog/index.mts', (s) =>
+  s.replace("from './catalog.json';", "from './catalog.json' with { type: 'json' };")
 );
+writeFileSync(join(WORK, 'catalog', 'catalog.json'), readFileSync(join(ROOT, 'lib', 'catalog', 'catalog.json')));
 
 const load = (n) => import(pathToFileURL(join(WORK, `${n}.mts`)).href);
-const { moveRendering } = await load('layout');
-const addTool = await load('addComponentWithContent');
-const moveTool = await load('moveComponent');
+const { moveRendering } = await load('operations/layout');
+const { LOCAL_OPERATION_KEYS } = await load('operations/index');
+const invoke = (await load('tools/invokeOperation')).execute;
+const { findOperations } = await load('catalog/index');
 const { compactHistory } = await load('compact-history');
+
+// The composites run through invokeOperation exactly as the agent calls them.
+const addTool = { execute: (params, ctx) => invoke({ key: 'buckley.pages.addComponentWithContent', kind: 'mutation', params }, ctx).then(unwrap) };
+const moveTool = { execute: (params, ctx) => invoke({ key: 'buckley.pages.moveComponent', kind: 'mutation', params }, ctx).then(unwrap) };
+function unwrap(out) {
+  return out.success ? { success: true, output: out.output.result } : out;
+}
 
 const r = (instanceId, placeholderKey, dataSource) => ({ id: `rend-${instanceId}`, instanceId, placeholderKey, dataSource });
 
@@ -162,6 +177,23 @@ await test('addComponentWithContent reports fields that did not save', async () 
   );
   assert.equal(out.output.contentVerified, false);
   assert.match(out.output.warnings.join(' '), /fields are empty on the new datasource: Missing/);
+});
+
+await test('every local operation is catalogued, as a mutation, and nothing else is', async () => {
+  const catalogued = LOCAL_OPERATION_KEYS.map((key) => findOperations(key)[0]);
+  assert.deepEqual(catalogued.map((op) => op?.kind), LOCAL_OPERATION_KEYS.map(() => 'mutation'));
+  assert.equal(findOperations('buckley.pages.removeComponent').length, 0);
+});
+
+await test('invokeOperation rejects bad params and the wrong kind without calling the SDK', async () => {
+  const client = fakeClient({ renderings: [r('a', 'main')] });
+  const ctx = { client, contextId: 'ctx' };
+  const missing = await invoke({ key: 'buckley.pages.moveComponent', kind: 'mutation', params: { pageId: 'page' } }, ctx);
+  assert.equal(missing.success, false);
+  assert.ok(missing.issues.some((i) => i.startsWith('instanceId')), JSON.stringify(missing.issues));
+  const wrongKind = await invoke({ key: 'buckley.pages.moveComponent', kind: 'query', params: {} }, ctx);
+  assert.match(wrongKind.error, /is a mutation/);
+  assert.equal(client.calls.length, 0);
 });
 
 await test('compactHistory shortens earlier tool results only', async () => {

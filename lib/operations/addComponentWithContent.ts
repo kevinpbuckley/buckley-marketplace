@@ -1,50 +1,22 @@
 import { z } from 'zod';
-import { tool } from 'ai';
-import type { ToolDefinition, ToolExecutor, ToolExecutorContext } from './types';
+import type { ToolExecutorContext, ToolExecutorResult } from '../tools/types';
+import type { LocalOperation } from './types';
 import { moveRendering, type PlacedComponent } from './layout';
-import { callOperation, describeFailure, reloadCanvasIfCurrent } from './operation-client';
+import { callOperation, describeFailure, reloadCanvasIfCurrent } from '../tools/operation-client';
 
-const inputSchema = z.object({
-  pageId: z.string().describe('The page item id'),
-  language: z.string().describe('The page language, e.g. "en"'),
-  componentRenderingId: z
-    .string()
-    .describe('Rendering id of the component, from xmc.agent.pagesGetAllowedComponentsByPlaceholder'),
-  placeholderPath: z.string().describe('Placeholder to add it to, e.g. "headless-main"'),
-  componentItemName: z
-    .string()
-    .describe('Name for the datasource item, e.g. "Clean Energy Quote". A suffix is added if the name is taken.'),
-  fields: z
-    .record(z.string(), z.string())
-    .describe(
-      'Datasource field values by exact field name, from datasourceFields of xmc.agent.componentsGetComponent. Rich text as clean HTML, other fields plain text.'
-    ),
-  position: z
-    .enum(['first', 'last', 'before', 'after'])
-    .optional()
-    .describe('Where to place it in the placeholder. Omit to append at the end.'),
-  relativeTo: z
-    .string()
-    .optional()
-    .describe('Required for before/after: instance id of the neighbouring component'),
-  site: z.string().optional().describe('The site name. Required when position is first, before or after.'),
+const schema = z.object({
+  pageId: z.string(),
+  language: z.string(),
+  componentRenderingId: z.string(),
+  placeholderPath: z.string(),
+  componentItemName: z.string(),
+  fields: z.record(z.string(), z.string()),
+  position: z.enum(['first', 'last', 'before', 'after']).optional(),
+  relativeTo: z.string().optional(),
+  site: z.string().optional(),
 });
 
-type Input = z.infer<typeof inputSchema>;
-
-export const definition: ToolDefinition = {
-  name: 'addComponentWithContent',
-  description:
-    'Add a component to a page with its datasource content in one call, then check the content was stored. Picks a unique datasource name, creates the datasource inline with the field values, optionally places the component (first, or before/after another), flags existing components on the page whose datasource is empty, and reloads the Pages canvas when that page is open. Check the placeholder allows the component first (xmc.agent.pagesGetAllowedComponentsByPlaceholder).',
-  category: 'Components',
-  inputSchema,
-  clientSide: true,
-};
-
-export const aiTool = tool({
-  description: definition.description,
-  inputSchema,
-});
+type Input = z.infer<typeof schema>;
 
 interface FieldNode {
   name: string;
@@ -112,9 +84,9 @@ async function verifyDatasource(
   return { checked: true, emptyFields };
 }
 
-export const execute: ToolExecutor = async (input, context) => {
+async function execute(params: Input, context: ToolExecutorContext): Promise<ToolExecutorResult> {
   const { pageId, language, componentRenderingId, placeholderPath, componentItemName, fields, position, relativeTo, site } =
-    input as Input;
+    params;
 
   if (position && position !== 'last' && !site) {
     return { success: false, error: `position "${position}" needs the site name.` };
@@ -206,4 +178,16 @@ export const execute: ToolExecutor = async (input, context) => {
       canvasReloaded,
     },
   };
+}
+
+/**
+ * Adds a component with its datasource content in one call: a unique datasource name, inline
+ * datasource creation, a read-back check of the stored fields, optional positioning, a warning
+ * for existing components left empty, and a canvas reload when that page is open.
+ */
+export const addComponentWithContent: LocalOperation<typeof schema> = {
+  key: 'buckley.pages.addComponentWithContent',
+  kind: 'mutation',
+  schema,
+  execute,
 };

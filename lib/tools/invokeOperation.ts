@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { tool } from 'ai';
 import type { ToolDefinition, ToolExecutor } from './types';
 import { callOperation, capLongStrings } from './operation-client';
+import { isLocalOperation, runLocalOperation } from '../operations';
 
 const inputSchema = z.object({
   key: z.string().describe('Operation key from searchOperations, e.g. "xmc.pages.renamePage"'),
@@ -41,6 +42,12 @@ type InvokeInput = z.infer<typeof inputSchema>;
 
 export const execute: ToolExecutor = async (input, context) => {
   const { key, kind, params, timeoutMs } = input as InvokeInput;
+
+  // `buckley.*` operations are composed here from several SDK calls rather than sent to the SDK.
+  if (isLocalOperation(key)) {
+    const local = await runLocalOperation(key, kind, params, context);
+    return local.success === true ? { success: true, output: { key, kind, result: local.output } } : local;
+  }
 
   const result = await callOperation(context, key, kind, params, timeoutMs);
   if (result.ok === false) {

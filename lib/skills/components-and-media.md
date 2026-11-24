@@ -14,20 +14,21 @@ when_to_use: The user asks to add, move or change a component on a page, work wi
 | One component's config and datasource fields | `xmc.agent.componentsGetComponent` — `{ path: { componentId } }` |
 | What is on a page now | `xmc.agent.pagesGetComponentsOnPage` — `{ path: { pageId }, query: { language } }` |
 | What is allowed in a placeholder | `xmc.agent.pagesGetAllowedComponentsByPlaceholder` — `{ path: { pageId, placeholderName }, query: { language } }` |
-| **Add a component with its content** | **`addComponentWithContent` tool** |
-| **Reorder, or move to another placeholder** | **`moveComponent` tool** |
+| **Add a component with its content** | **`buckley.pages.addComponentWithContent`** — `{ pageId, language, componentRenderingId, placeholderPath, componentItemName, fields, position?, relativeTo?, site? }` |
+| **Reorder, or move to another placeholder** | **`buckley.pages.moveComponent`** — `{ pageId, site, language, instanceId, position, relativeTo?, placeholder? }` |
 | Point a component at an existing datasource | `xmc.agent.pagesSetComponentDatasource` — `{ path: { pageId, componentId }, body: { datasourceId, language } }` |
 | Find reusable datasources | `xmc.agent.componentsSearchComponentDatasources` — `{ path: { componentId }, query: { term } }` |
 
-These shapes are exact; invoke them without describing first. Batch the reads with
-`invokeQueries`.
+These shapes are exact; invoke them with `invokeOperation` without describing first. The
+`buckley.*` operations are Buckley's own composites: both are mutations, and their params go
+directly, not under path/query/body. Batch the reads with `invokeQueries`.
 
 ### Adding a component
 
 1. `pagesGetAllowedComponentsByPlaceholder` for the target placeholder, and
    `componentsGetComponent` for the datasource field names — together, in one `invokeQueries`.
    Do not skip the placeholder check: a disallowed component fails or will not render.
-2. `addComponentWithContent` with the field values. In one call it:
+2. `buckley.pages.addComponentWithContent` with the field values. In one call it:
    - picks a datasource name that is not taken (no "name already used" retries),
    - creates the datasource inline and checks every field you set was stored,
    - places it with `position` (`first`, or `before`/`after` + `relativeTo`); omit to append,
@@ -38,7 +39,7 @@ These shapes are exact; invoke them without describing first. Batch the reads wi
 
 Do **not** create datasources with `xmc.agent.componentsCreateComponentDatasource` for a
 page component: it often fails with "could not resolve parent location" because the location
-depends on the page. Inline creation through `addComponentWithContent` avoids that.
+depends on the page. Inline creation through `buckley.pages.addComponentWithContent` avoids that.
 
 To reuse an existing datasource instead, add the component with `xmc.agent.pagesAddComponentOnPage`
 — `{ path: { pageId }, body: { componentRenderingId, placeholderPath, componentItemName, language } }`
@@ -47,9 +48,9 @@ near-duplicate — orphaned datasources clutter content.
 
 ### Reordering and removing
 
-- `moveComponent` moves a component by its `id` from `pagesGetComponentsOnPage`. Do not call
-  `xmc.pages.saveLayout` by hand — the layout must be sent as a JSON string with the page
-  revision, and getting that wrong takes several attempts.
+- `buckley.pages.moveComponent` moves a component by its `id` from `pagesGetComponentsOnPage`.
+  Do not call `xmc.pages.saveLayout` by hand — the layout must be sent as a JSON string with
+  the page revision, and getting that wrong takes several attempts.
 - There is no remove-component operation in the SDK. To clear a block, ask the user whether
   to empty its datasource or remove it in the Pages editor.
 

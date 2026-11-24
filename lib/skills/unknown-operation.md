@@ -26,6 +26,7 @@ and the fewer steps it takes the faster and cheaper the answer.
    | `xmc.preview` / `xmc.live` | read-only GraphQL against unpublished / published content |
    | `xmc.authoring` | Authoring GraphQL, for anything with no dedicated operation |
    | `ai.skills` | brand review |
+   | `buckley.pages` | Buckley's own composites: add a component with content, move a component. Params go directly. |
    | `host`, `site`, `pages`, `application` | context from the Marketplace host |
 
    The top three hits include their `params` (request types under `types`). If the one you

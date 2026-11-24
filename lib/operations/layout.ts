@@ -1,5 +1,5 @@
-import type { ToolExecutorContext } from './types';
-import { callOperation, describeFailure, sameId } from './operation-client';
+import type { ToolExecutorContext } from '../tools/types';
+import { callOperation, describeFailure, sameId } from '../tools/operation-client';
 
 interface LayoutRendering {
   id: string;

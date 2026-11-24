@@ -60,10 +60,18 @@ Before adding, check the placeholder allows each component — one call per plac
 Read a component's datasource field names with `xmc.agent.componentsGetComponent` —
 `{ path: { componentId } }` → `datasourceFields`. Batch these reads with `invokeQueries`.
 
-Then add each component with **`addComponentWithContent`** — one call per component. It
-names the datasource uniquely, stores the field values, checks they saved, and can place
-the component (`position: "first"`, or `"before"`/`"after"` with `relativeTo`). Add them in
-reading order, or use `position` so the result reads top to bottom.
+Then add each component with **`mutation buckley.pages.addComponentWithContent`** through
+`invokeOperation` — one call per component, params passed directly:
+
+```
+{ pageId, language, componentRenderingId, placeholderPath: "headless-main",
+  componentItemName: "Community Solar Intro", fields: { text: "<p>...</p>" },
+  position?: "first" | "last" | "before" | "after", relativeTo?: instanceId, site?: siteName }
+```
+
+It names the datasource uniquely, stores the field values, checks they saved, and can place
+the component (`position: "first"`, or `"before"`/`"after"` with `relativeTo`; `site` is
+required then). Add them in reading order, or use `position` so the result reads top to bottom.
 
 ## 5. Quotes and other components that reference page content
 
@@ -73,8 +81,8 @@ that the layout does not render.
 
 ## 6. Check and show
 
-- Read `warnings` from each `addComponentWithContent` call. An existing component with empty
-  content is reported there — ask the user whether to fill or remove it.
+- Read `warnings` from each `buckley.pages.addComponentWithContent` result. An existing
+  component with empty content is reported there — ask the user whether to fill or remove it.
 - The canvas reloads automatically when the page is open in the Pages editor. To open the new
   page there, invoke `mutation pages.context` with `{ itemId: pageId, language }`.
 - Never paste a preview URL into chat: it contains the editing host's secret.

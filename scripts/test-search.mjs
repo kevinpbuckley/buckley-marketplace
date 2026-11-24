@@ -42,6 +42,9 @@ const CASES = [
   ['content transfer status', 'xmc.contentTransfer.getContentTransferStatus'],
   // Host-bridge keys have no generated summary; without the hand-written one this found nothing.
   ['open page in the editor', 'pages.context'],
+  // Buckley's composites are catalogued, so search reaches them like any SDK operation.
+  ['move a component', 'buckley.pages.moveComponent'],
+  ['add component with content', 'buckley.pages.addComponentWithContent'],
 ];
 
 let failed = 0;
