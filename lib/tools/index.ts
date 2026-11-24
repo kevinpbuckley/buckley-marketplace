@@ -1,5 +1,8 @@
 import type { ToolModule, ToolDefinition, AgentConfig, LoadedAgent, ToolExecutorContext } from './types';
 import * as invokeOperation from './invokeOperation';
+import * as invokeQueries from './invokeQueries';
+import * as moveComponent from './moveComponent';
+import * as addComponentWithContent from './addComponentWithContent';
 import * as getCurrentPageContext from './getCurrentPageContext';
 import * as getCurrentSiteContext from './getCurrentSiteContext';
 import * as generateBrandReview from './generateBrandReview';
@@ -11,14 +14,22 @@ import * as generateBrandReview from './generateBrandReview';
  * - searchOperations, describeOperation and loadSkill run on the server (./server-tools), because
  *   they read the catalog and the skill playbooks. This module is imported by ChatWindow, so a
  *   server-only dependency here would break the client bundle.
- * - invokeOperation runs any of the SDK operations those tools find.
+ * - invokeOperation runs any of the SDK operations those tools find; invokeQueries batches reads.
+ * - moveComponent and addComponentWithContent collapse multi-step layout edits into one call,
+ *   since each step otherwise costs a model round trip.
  * - The Pages-editor context tools read what the host injected, which no API call returns.
  * - generateBrandReview pins the brand kit lookup and a longer timeout for the review.
  */
 const toolRegistry: Map<string, ToolModule> = new Map(
-  [invokeOperation, getCurrentPageContext, getCurrentSiteContext, generateBrandReview].map(
-    (module): [string, ToolModule] => [module.definition.name, module]
-  )
+  [
+    invokeOperation,
+    invokeQueries,
+    moveComponent,
+    addComponentWithContent,
+    getCurrentPageContext,
+    getCurrentSiteContext,
+    generateBrandReview,
+  ].map((module): [string, ToolModule] => [module.definition.name, module])
 );
 
 /**

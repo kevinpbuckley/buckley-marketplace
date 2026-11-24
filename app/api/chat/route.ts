@@ -4,6 +4,7 @@ import { serverAiTools } from '@/lib/tools/server-tools';
 import { trackTokenUsage } from '@/lib/token-tracker';
 import { chatModel, deploymentName } from '@/lib/azure-openai';
 import { getSkillsIndex } from '@/lib/skills';
+import { compactHistory } from '@/lib/compact-history';
 
 // Client-executable tools come from the agent config; the catalog/skills tools execute here.
 const agent = getDefaultAgent();
@@ -33,7 +34,8 @@ export async function POST(req: Request) {
   const result = await streamText({
     model: chatModel,
     system: systemPrompt,
-    messages: await convertToModelMessages(messages),
+    // The client keeps the full history; only the model's copy is shortened.
+    messages: await convertToModelMessages(compactHistory(messages)),
     tools,
     // searchOperations -> describeOperation -> answer runs entirely server-side, so let those
     // chain within one request. Client-side tools still end the step, since their results

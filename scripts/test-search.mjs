@@ -23,7 +23,9 @@ const source = readFileSync(join(ROOT, 'lib', 'catalog', 'index.ts'), 'utf8')
 writeFileSync(join(work, 'catalog-index.mts'), source);
 copyFileSync(join(ROOT, 'lib', 'catalog', 'catalog.json'), join(work, 'catalog.json'));
 
-const { searchOperations } = await import(pathToFileURL(join(work, 'catalog-index.mts')).href);
+const { searchOperations, findOperations, compactParams, requestTypes } = await import(
+  pathToFileURL(join(work, 'catalog-index.mts')).href
+);
 
 const CASES = [
   ['translate site', 'xmc.sites.translateSite'],
@@ -38,6 +40,8 @@ const CASES = [
   ['create a collection', 'xmc.sites.createCollection'],
   ['page screenshot', 'xmc.agent.pagesGetPageScreenshot'],
   ['content transfer status', 'xmc.contentTransfer.getContentTransferStatus'],
+  // Host-bridge keys have no generated summary; without the hand-written one this found nothing.
+  ['open page in the editor', 'pages.context'],
 ];
 
 let failed = 0;
@@ -62,5 +66,28 @@ if (deprecated.length) {
   console.log('PASS  deprecated keys excluded by default');
 }
 
-console.log(`\n${CASES.length + 1 - failed}/${CASES.length + 1} passed`);
+// Navigation is the mutation; describing the key by name must not hide it behind the query.
+const navigate = findOperations('pages.context').find((op) => op.kind === 'mutation');
+if (navigate?.params?.includes('itemId')) {
+  console.log('PASS  pages.context mutation documents its params');
+} else {
+  failed++;
+  console.log(`FAIL  pages.context mutation params: ${navigate?.params ?? 'missing'}`);
+}
+
+// Compaction drops what the agent never sets but keeps everything it does.
+const addComponent = findOperations('xmc.agent.pagesAddComponentOnPage')[0];
+const compact = compactParams(addComponent.params);
+const dropped = ['x-sc-job-id', 'url:', 'sitecoreContextId'].filter((s) => compact.includes(s));
+const kept = ['body: AddComponentRequest', 'pageId: string'].filter((s) => !compact.includes(s));
+if (dropped.length || kept.length || !requestTypes(addComponent).AddComponentRequest) {
+  failed++;
+  console.log(`FAIL  compactParams: still has [${dropped}], lost [${kept}]`);
+  console.log(compact);
+} else {
+  console.log(`PASS  compactParams (${addComponent.params.length} -> ${compact.length} chars)`);
+}
+
+const EXTRA_CHECKS = 3;
+console.log(`\n${CASES.length + EXTRA_CHECKS - failed}/${CASES.length + EXTRA_CHECKS} passed`);
 if (failed) process.exit(1);

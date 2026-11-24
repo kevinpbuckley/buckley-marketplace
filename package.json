@@ -9,7 +9,8 @@
     "lint": "eslint",
     "catalog:generate": "node scripts/generate-catalog.mjs",
     "catalog:verify": "node scripts/verify-keys.mjs",
-    "catalog:test": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/test-search.mjs"
+    "catalog:test": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/test-search.mjs",
+    "tools:test": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/test-tools.mjs"
   },
   "dependencies": {
     "@ai-sdk/azure": "^4.0.76",

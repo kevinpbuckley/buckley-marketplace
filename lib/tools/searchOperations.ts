@@ -1,7 +1,20 @@
 import { z } from 'zod';
 import { tool } from 'ai';
 import type { ToolDefinition } from './types';
-import { searchOperations, listNamespaces, catalogMeta } from '../catalog';
+import {
+  searchOperations,
+  listNamespaces,
+  catalogMeta,
+  compactParams,
+  findOperations,
+  requestTypes,
+} from '../catalog';
+
+/**
+ * The top hits come back with their params, so the usual search -> describe -> invoke chain
+ * loses a model round trip. Beyond three, the extra shapes cost more context than they save.
+ */
+const DETAILED_HITS = 3;
 
 const inputSchema = z.object({
   query: z
@@ -17,7 +30,7 @@ const inputSchema = z.object({
 export const definition: ToolDefinition = {
   name: 'searchOperations',
   description:
-    `Search the Sitecore Marketplace SDK for operations. The SDK exposes ${catalogMeta.count} operations and only the most common ones have dedicated tools — use this to find anything else, then call describeOperation for its parameters and invokeOperation to run it. Use this whenever no dedicated tool covers the request.`,
+    `Search the Sitecore Marketplace SDK for operations. The SDK exposes ${catalogMeta.count} operations and only the most common ones have dedicated tools — use this to find anything else, then invokeOperation to run it. The top ${DETAILED_HITS} hits include their params (and request types under \`types\`), so you can invoke one of those directly; call describeOperation only for other hits or for a response shape. Use this whenever no dedicated tool covers the request.`,
   category: 'Catalog',
   inputSchema,
   clientSide: false,
@@ -38,11 +51,21 @@ export const aiTool = tool({
       };
     }
 
+    const types: Record<string, string> = {};
+    const detailed = results.map((result, index) => {
+      if (index >= DETAILED_HITS) return result;
+      const op = findOperations(result.key).find((o) => o.kind === result.kind);
+      if (!op?.params) return result;
+      Object.assign(types, requestTypes(op));
+      return { ...result, params: compactParams(op.params) };
+    });
+
     return {
       success: true,
       count: results.length,
-      results,
-      next: 'Call describeOperation with a key to see its parameters.',
+      results: detailed,
+      ...(Object.keys(types).length && { types }),
+      next: 'Invoke a hit that has params directly. For the others, or for a response shape, call describeOperation with all the keys you need.',
     };
   },
 });

@@ -6,9 +6,13 @@ when_to_use: Any task needing Sitecore data or changes. Read this before your fi
 
 # Calling SDK operations
 
-You have four tools and the whole SDK behind them. Nearly every task is the same three steps.
+You have a handful of tools and the whole SDK behind them. Nearly every task is the same loop,
+and the fewer steps it takes the faster and cheaper the answer.
 
 ## The loop
+
+0. **Check the skills first.** A loaded skill gives exact request shapes for the common
+   operations; invoke those directly and skip steps 1–2.
 
 1. **`searchOperations`** with plain keywords for the goal — "rename site", "page versions",
    "upload asset". Narrow with `namespace` when you already know the area:
@@ -24,21 +28,27 @@ You have four tools and the whole SDK behind them. Nearly every task is the same
    | `ai.skills` | brand review |
    | `host`, `site`, `pages`, `application` | context from the Marketplace host |
 
-2. **`describeOperation`** on the key. This returns the exact params type — required versus
-   optional, and the shape of any request body. **Never skip it.** Guessed parameter names
+   The top three hits include their `params` (request types under `types`). If the one you
+   need is among them, go straight to step 3.
+
+2. **`describeOperation`** for anything else — and for response shapes. Pass every key you
+   are about to use in one call: `keys: ["a", "b", "c"]`. Never guess params: wrong names
    fail, and the failure often looks like a permissions error rather than a bad request.
 
 3. **`invokeOperation`** with `key`, `kind` (`query` reads, `mutation` writes) and `params`
-   shaped exactly as step 2 described.
+   shaped exactly as described. For several independent reads, use **`invokeQueries`** once
+   instead of one `invokeOperation` per read.
 
 ## Reading what comes back
 
-`describeOperation` reports `returns` and `responseShape` alongside the params. Read it before
-you call, and you will know what you are getting instead of guessing at it afterwards.
+`describeOperation` reports `returns` and `responseShape` for each operation, with shared
+types listed once under `types`. Read it before you call, and you will know what you are
+getting instead of guessing at it afterwards.
 
 Things that regularly catch people out:
 
 - **`invokeOperation` returns `{ key, kind, result }`.** The payload is under `result`.
+  `invokeQueries` returns `{ results: [{ key, success, result | error }] }` in request order.
 - **A field named for a thing is often just its id.** `brand_information` on site details is
   the brand kit's GUID, not the guidance. If a value is a 36-character GUID, treat it as a
   reference and go fetch the thing it points at.
@@ -63,7 +73,8 @@ Pass the sections `describeOperation` shows, usually some of:
 
 - `sitecoreContextId` is added automatically. Do not pass it.
 - Host-bridge keys (`host.user`, `site.context`, `pages.reloadCanvas`) take **no params** —
-  call them with the key and kind alone.
+  call them with the key and kind alone. The exception is `mutation pages.context`, which
+  opens a page in the Pages editor and takes `{ itemId, language }` directly (no path/query/body).
 - If a call fails, re-read `describeOperation` before retrying. Do not guess a second shape.
 
 ## Safety

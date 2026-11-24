@@ -15,9 +15,43 @@ export interface CatalogOperation {
   /** The payload's fields, when the SDK types it. Absent means the SDK returns `unknown`. */
   response?: string;
   referencedTypes?: Record<string, string>;
+  /** Extra search words, scored like words of the operation name. */
+  aliases?: string[];
 }
 
-const operations = catalog.operations as CatalogOperation[];
+/**
+ * Host-bridge keys are declared inline in the client SDK, so the generator records them with no
+ * summary or params. Without these the agent cannot find "open a page" or learn its params.
+ * Shapes are from `PagesContextParams` in @sitecore-marketplace-sdk/core.
+ */
+const HOST_BRIDGE_DOCS: Record<string, Pick<CatalogOperation, 'summary' | 'params' | 'aliases'>> = {
+  'mutation pages.context': {
+    summary:
+      'Open (navigate to) a page in the Pages editor canvas. Params are passed directly, not under path/query/body.',
+    params: '{\n    itemId: string;\n    language?: string;\n    itemVersion?: number;\n}',
+    aliases: ['open', 'navigate', 'goto'],
+  },
+  'mutation pages.reloadCanvas': {
+    summary: 'Reload the Pages editor canvas so the user sees saved changes. Takes no params.',
+    params: 'none',
+    aliases: ['refresh'],
+  },
+  'query pages.context': {
+    summary: 'The page currently open in the Pages editor: page info and site info. Takes no params.',
+    params: 'none',
+  },
+  'query site.context': {
+    summary: 'The site the app is opened for, including its brand kit. Takes no params.',
+    params: 'none',
+  },
+};
+
+function withHostBridgeDocs(op: CatalogOperation): CatalogOperation {
+  const docs = HOST_BRIDGE_DOCS[`${op.kind} ${op.key}`];
+  return docs && !op.summary && !op.params ? { ...op, ...docs } : op;
+}
+
+const operations = (catalog.operations as CatalogOperation[]).map(withHostBridgeDocs);
 
 export const catalogMeta = {
   count: operations.length,
@@ -52,7 +86,7 @@ function score(op: CatalogOperation, searchTerms: string[]): number {
   const operationName = op.key.split('.').pop()!;
   const name = operationName.toLowerCase();
   // `translateSite` -> ['translate', 'site'], so a whole-word hit outranks a substring one.
-  const words = operationName.split(/(?=[A-Z])/).map((w) => w.toLowerCase());
+  const words = [...operationName.split(/(?=[A-Z])/).map((w) => w.toLowerCase()), ...(op.aliases ?? [])];
   const summary = op.summary.toLowerCase();
 
   let total = 0;
@@ -112,8 +146,61 @@ export function searchOperations(
     }));
 }
 
-export function describeOperation(key: string): CatalogOperation | undefined {
-  return operations.find((op) => op.key === key);
+/** Every catalog entry for a key: host-bridge keys like `pages.context` exist as both kinds. */
+export function findOperations(key: string): CatalogOperation[] {
+  return operations.filter((op) => op.key === key);
+}
+
+/** Text of a `{ ... }` block starting at `open`, by brace matching. Returns its end index. */
+function blockEnd(text: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}' && --depth === 0) return i;
+  }
+  return text.length - 1;
+}
+
+/**
+ * Strips what the agent never sets from a params type: the `x-sc-job-id` audit header, the
+ * route `url`, `never` placeholders, and `sitecoreContextId`, which invokeOperation fills in.
+ * That is roughly a third of every params block, paid for on each describe and search hit.
+ */
+export function compactParams(params: string): string {
+  let text = params;
+
+  const headers = text.search(/\n\s*headers\??:\s*\{/);
+  if (headers !== -1) {
+    const end = blockEnd(text, text.indexOf('{', headers));
+    text = text.slice(0, headers) + text.slice(end + 1).replace(/^;/, '');
+  }
+
+  return text
+    .replace(/\n\s*\/\*\*\s*\n\s*\*\s*The Sitecore context ID\.\s*\n\s*\*\/\s*\n\s*sitecoreContextId\?: string;/g, '')
+    .replace(/\n\s*url: '[^']*';/g, '')
+    .replace(/\n\s*(?:body|path)\?: never;/g, '')
+    .replace(/\n\s*query\?: \{\s*\};?/g, '');
+}
+
+/** Named types the params refer to, followed transitively, so a request body is fully spelled out. */
+export function requestTypes(op: CatalogOperation): Record<string, string> {
+  const available = op.referencedTypes ?? {};
+  const found: Record<string, string> = {};
+  let frontier = op.params ? [op.params] : [];
+
+  while (frontier.length) {
+    const next: string[] = [];
+    for (const text of frontier) {
+      for (const [, name] of text.matchAll(/\b([A-Z]\w+)\b/g)) {
+        if (!available[name] || found[name]) continue;
+        found[name] = available[name];
+        next.push(available[name]);
+      }
+    }
+    frontier = next;
+  }
+
+  return found;
 }
 
 export function listNamespaces(): Array<{ namespace: string; count: number }> {

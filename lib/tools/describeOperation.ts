@@ -1,52 +1,83 @@
 import { z } from 'zod';
 import { tool } from 'ai';
 import type { ToolDefinition } from './types';
-import { describeOperation, replacementFor, searchOperations } from '../catalog';
+import {
+  compactParams,
+  findOperations,
+  replacementFor,
+  searchOperations,
+  type CatalogOperation,
+} from '../catalog';
+
+const MAX_KEYS = 8;
 
 const inputSchema = z.object({
-  key: z.string().describe('Full operation key, e.g. "xmc.pages.addPageVersion"'),
+  keys: z
+    .array(z.string())
+    .min(1)
+    .max(MAX_KEYS)
+    .optional()
+    .describe(`Full operation keys, e.g. ["xmc.pages.addPageVersion", "xmc.agent.pagesGetPage"]. Up to ${MAX_KEYS}.`),
+  key: z.string().optional().describe('A single operation key. Prefer keys to describe several at once.'),
 });
 
 export const definition: ToolDefinition = {
   name: 'describeOperation',
   description:
-    'Get the parameter shape of a Marketplace SDK operation before calling it with invokeOperation. Returns the TypeScript type of the params, including path, query and body fields.',
+    'Get the parameter and response shapes of one or more Marketplace SDK operations before calling them with invokeOperation. Pass every key you are about to use in one call. Shared types are listed once under `types`.',
   category: 'Catalog',
   inputSchema,
   clientSide: false,
 };
 
+function describe(op: CatalogOperation, types: Record<string, string>) {
+  // Operations share request and response types, so each is listed once across the batch.
+  for (const [name, body] of Object.entries(op.referencedTypes ?? {})) types[name] ??= body;
+
+  return {
+    key: op.key,
+    kind: op.kind,
+    summary: op.summary,
+    ...(op.deprecated && { deprecated: true, useInstead: replacementFor(op.key) }),
+    params: op.params ? compactParams(op.params) : 'not typed by the SDK',
+    ...(op.response
+      ? { returns: op.responseType, responseShape: op.response }
+      : {
+          returns: op.responseType ?? 'not typed by the SDK',
+          responseNote: 'The SDK does not type this response. Inspect what comes back rather than assuming a shape.',
+        }),
+  };
+}
+
 export const aiTool = tool({
   description: definition.description,
   inputSchema,
-  execute: async ({ key }) => {
-    const op = describeOperation(key);
+  execute: async ({ keys, key }) => {
+    const requested = [...new Set([...(keys ?? []), ...(key ? [key] : [])])];
+    if (requested.length === 0) {
+      return { success: false, error: 'Pass `keys`, the operation keys to describe.' };
+    }
 
-    if (!op) {
-      return {
-        success: false,
-        error: `No operation "${key}".`,
-        didYouMean: searchOperations(key.split('.').pop() ?? key, { limit: 5 }),
-      };
+    const types: Record<string, string> = {};
+    const operations = [];
+    const notFound = [];
+
+    for (const k of requested) {
+      const matches = findOperations(k);
+      if (matches.length) operations.push(...matches.map((op) => describe(op, types)));
+      else notFound.push({ key: k, didYouMean: searchOperations(k.split('.').pop() ?? k, { limit: 5 }).map((r) => r.key) });
+    }
+
+    if (operations.length === 0) {
+      return { success: false, error: `No operation ${requested.map((k) => `"${k}"`).join(', ')}.`, notFound };
     }
 
     return {
       success: true,
-      key: op.key,
-      kind: op.kind,
-      summary: op.summary,
-      deprecated: op.deprecated,
-      ...(op.deprecated && { useInstead: replacementFor(op.key) }),
-      params: op.params,
-      ...(op.response
-        ? { returns: op.responseType, responseShape: op.response }
-        : {
-            returns: op.responseType ?? 'not typed by the SDK',
-            responseNote:
-              'The SDK does not type this response. Inspect what comes back rather than assuming a shape.',
-          }),
-      ...(op.referencedTypes && { referencedTypes: op.referencedTypes }),
-      next: `Call invokeOperation with key "${op.key}" and params matching the shape above.`,
+      operations,
+      ...(Object.keys(types).length && { types }),
+      ...(notFound.length && { notFound }),
+      next: 'Call invokeOperation with a key, its kind, and params matching the shape above. sitecoreContextId is added for you.',
     };
   },
 });

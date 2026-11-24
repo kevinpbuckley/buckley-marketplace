@@ -4,6 +4,9 @@
   "systemPromptFile": "./system-prompt.md",
   "tools": [
     "invokeOperation",
+    "invokeQueries",
+    "moveComponent",
+    "addComponentWithContent",
     "getCurrentPageContext",
     "getCurrentSiteContext",
     "generateBrandReview"
